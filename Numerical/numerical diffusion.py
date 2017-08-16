@@ -21,14 +21,14 @@ tmax=600 #Time in s
 
 
 L=500e-6 #Length in m
-nx=300   #number of division of the x axis
-CsaltIN= 200  #Initial salt concentration in the channel
+nx=100   #number of division of the x axis
+CsaltIN= 20  #Initial salt concentration in the channel
 CsaltOUT=.02 #Initial salt concentration out of the channel
 
 #Diffusion and diffusiophoresis coefficients
 Dprot=5.9e-11
 Dsalt=2*1e-9
-Ddiffph=-3e-11
+Ddiffph=-1e-15
 
 
 nt=10    #Number of times at which to plot
@@ -38,7 +38,8 @@ reservoir=False  # Dead end or reservoir
 
 
 
-
+X = np.exp(np.linspace(np.log(1e-6), np.log(501e-6), nx))-1e-6
+X = np.linspace(0, L, nx)
 
 dx = L/nx
 Cx = ds.getCx(nx, dx, reservoir)
@@ -46,7 +47,7 @@ x=(np.arange(nx)*dx)[:,None]
 #get t for plotting
 t=np.exp(np.linspace(0,np.log(tmax),nt))
 
-simulation = ds.diffusioSim(L, nx, CsaltIN, CsaltOUT, Dprot, 
+simulation = ds.diffusioSim(X, CsaltIN, CsaltOUT, Dprot, 
                             Dsalt, Ddiffph, reservoir)
              
   
@@ -55,13 +56,13 @@ for i, dt in enumerate(np.diff(t)):
     simulation.advance(dt)
     c=cmap(i/(nt-1))
     plt.figure(1)
-    plt.semilogx(x*1e6, np.log(simulation.Csalt), c=c)
+    plt.plot(x*1e6, simulation.Csalt, c=c)
     plt.figure(2)
     plt.plot(x[1:]*1e6, (Cx@simulation.Csalt)[1:], c=c)
     plt.figure(3)
     plt.plot(x[1:]*1e6, (Cx@simulation.Csalt/simulation.Csalt)[1:], c=c)
     plt.figure(0)
-    plt.semilogx(x*1e6, simulation.Cprot, c=c)
+    plt.plot(x*1e6, simulation.Cprot, c=c)
     
         
 plt.figure(0)

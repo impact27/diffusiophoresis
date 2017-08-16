@@ -19,51 +19,74 @@ class diffusioSim():
         #init proteins concentration                         
         self._Cprot=np.zeros_like(X)
         self._Cprot[0]=1 
-#        self._Cprot[:nx//10] = np.linspace(1, 0, nx//10)
         
-        #New dt
-        dt=dx**2/Dprot/2
-        #Compute salt dt
-        dtsalt=dx**2/Dsalt/2
-        #Align with dt
-        Nsaltdt = int(np.ceil(dt/dtsalt))
-        dtsalt = dt/Nsaltdt
-        #Step matrix
-        I=np.eye(nx, dtype=float)  
-        self._Cx = getCx(nx, dx, reservoir)
-        self._Cxx = getCxx(nx, dx, reservoir)
+        self._X = X
         
-        dF = dtsalt*Dsalt*self._Cxx
-        self._Fsalt = np.linalg.inv(I-.5*dF)@(I+.5*dF)
-        self._Fsalt = np.linalg.matrix_power(self._Fsalt, Nsaltdt)
-        self._dt = dt
-        self._nx = nx
+        
         self._Ddiffph = Ddiffph
         self._Dprot = Dprot
         self._Dsalt = Dsalt
+        
+        self._neg = Ddiffph*(CsaltIN - CsaltOUT) > 0
+        q = getQs(len(X))
+        sigmap = (q[1]-q[0])
+        dx = sigmap@X
+        dx[-1] = dx[-2]
+        sigmap = 1/dx[:, np.newaxis]*sigmap
+        self._sigmap = sigmap
+        self._dx = dx
+        self._q = q
+        fsalt = -Dsalt*sigmap
+        self._dFsalt = self._getdF(X, fsalt)
+
+        
+        
+        
+        
+        self._dtsalt = np.min(dx)**2/Dsalt/2
+        
+        
     
-#    @profile
     def advance(self, t):
-        I=np.eye(self._nx, dtype=float)
-        Nsteps = int(t/self._dt)
-        for i in range(Nsteps):
-            #update Csalt
-            self._Csalt=self._Fsalt@self._Csalt
-            #Compute the gradient of ln Csalt and the laplacian
-            GlnC = self._Cx@self._Csalt/self._Csalt
-            GGlnC = (self._Cxx@self._Csalt/self._Csalt 
-                             -(self._Cx@self._Csalt)**2/self._Csalt**2)
+        
+        q = self._q
+        sigmap = self._sigmap
+        dx = self._dx
+        neg = self._neg
+        Dprot = self._Dprot
+        Ddiffph = self._Ddiffph
+        while t>0:
+            #Get dxlnqs
+            dxlnQs = sigmap@self._Csalt/self._Csalt
             
-            dF = self._dt*(self._Dprot*self._Cxx
-                     + self._Ddiffph*(
-                             GlnC[:, np.newaxis]*self._Cx 
-                             + GGlnC[:, np.newaxis]*I))
-            #Get new step matrix
-#            Fprot=np.linalg.inv(I-.5*dF)@(I+.5*dF)
-            Fprot=(I+dF)
-#            Do step
-            self._Cprot=Fprot@self._Cprot
-        print(np.max(np.abs(eigvals(Fprot))),np.max(self._Csalt))
+            #Get dt
+            dt0 = np.min(dx)**2/Dprot/2
+#            dt1 = np.min(dx)/np.abs(Ddiffph)/2/np.max(dxlnQs)
+#            dt  = np.min((dt0, dt1))
+#            print(dt0, dt1)
+            dt = dt0
+            
+            #Update salt
+            Nsaltdt = int(np.ceil(dt/self._dtsalt))
+            dtsalt = dt/Nsaltdt
+            Fsalt = np.linalg.matrix_power(q[0] + dtsalt*self._dFsalt, Nsaltdt)
+            self._Csalt = Fsalt@self._Csalt
+            
+            #Get dxlnqs
+            dxlnQs = sigmap@self._Csalt/self._Csalt
+            dx = np.max(dx)
+            dx2lnQs = 1/dx**2*(q[-1]-2*q[0]+q[1])@self._Csalt/self._Csalt - dxlnQs**2
+            
+            #Update proteins
+            fprot = (- Dprot*sigmap)# + Ddiffph*dxlnQs[:, np.newaxis]*q[int(neg)])
+            dF = self._getdF(self._X, fprot)
+            dF += Ddiffph*dxlnQs[:, np.newaxis]*sigmap+ Ddiffph*dx2lnQs[:, np.newaxis]*q[0]
+            F = q[0] + dt*dF
+            self._Cprot = F@self._Cprot
+            
+            t = t-dt
+            
+        print(np.max(np.abs(eigvals(F))),np.max(self._Csalt))
     
     @property 
     def Csalt(self):
@@ -72,34 +95,13 @@ class diffusioSim():
     @property 
     def Cprot(self):
         return self._Cprot
-    
-    def _getSaltFlux(self, Dsalt, X):
-        """
-        Returns f_{i+1/2}
-        """
-        q = getQs(len(X))
-        sigmap = (q[1]-q[0])
-        dx = sigmap@X
-        f = 1/dx[:, np.newaxis]*(Dsalt*sigmap)
         
-        return f
-    
-    def _getProtFlux(self, Dprot, X, Ddiffph, lnQs, neg):
-        """
-        Returns f_{i+1/2}
-        """
-    #    neg = Ddiffph*(CsaltIN - CsaltOUT) < 0
-        q = getQs(len(X))
-        sigmap = (q[1]-q[0])
-        dx = sigmap@X
-        f = 1/dx[:, np.newaxis]*(Dprot*sigmap
-                            +Ddiffph*(sigmap@lnQs)*q[neg])
-        return f
-        
-    def _getdF(self, X, dt, fp):
+    def _getdF(self, X, fp):
         q = getQs(len(X))
         dx = 1/2*(q[1]-q[-1])@X
-        dF = dt/dx[:, np.newaxis]*(q[-1]@fp - fp)
+        dx = np.diff(X)
+        dx = np.append(dx, dx[-1])
+        dF = 1/dx[:, np.newaxis]*(q[-1]@fp - fp)
         return dF
     
 #get differential operators matrix
