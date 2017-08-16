@@ -74,14 +74,28 @@ class diffusioSim():
             
             #Get dxlnqs
             dxlnQs = sigmap@self._Csalt/self._Csalt
-            dx = np.max(dx)
-            dx2lnQs = 1/dx**2*(q[-1]-2*q[0]+q[1])@self._Csalt/self._Csalt - dxlnQs**2
             
             #Update proteins
-            fprot = (- Dprot*sigmap)# + Ddiffph*dxlnQs[:, np.newaxis]*q[int(neg)])
+            fprot = (- Dprot*sigmap + Ddiffph*dxlnQs[:, np.newaxis]*q[int(neg)])
             dF = self._getdF(self._X, fprot)
-            dF += Ddiffph*dxlnQs[:, np.newaxis]*sigmap+ Ddiffph*dx2lnQs[:, np.newaxis]*q[0]
-            F = q[0] + dt*dF
+            
+            
+            
+            
+            Cxx = getCxx(len(self._X), np.max(dx))
+            Cx = getCx(len(self._X), np.max(dx))
+            GlnC = Cx@self._Csalt/self._Csalt
+            GGlnC = (Cxx@self._Csalt/self._Csalt 
+                             -(Cx@self._Csalt)**2/self._Csalt**2)
+            
+
+            dF2 = (self._Dprot*Cxx
+                     + self._Ddiffph*(
+                             GlnC[:, np.newaxis]*Cx 
+                             + GGlnC[:, np.newaxis]*q[0]))
+            
+            
+            F = q[0] + dt*dF2
             self._Cprot = F@self._Cprot
             
             t = t-dt

@@ -28,7 +28,7 @@ CsaltOUT=.02 #Initial salt concentration out of the channel
 #Diffusion and diffusiophoresis coefficients
 Dprot=5.9e-11
 Dsalt=2*1e-9
-Ddiffph=-1e-15
+Ddiffph=-3e-11
 
 
 nt=10    #Number of times at which to plot
