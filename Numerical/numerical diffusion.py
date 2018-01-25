@@ -5,93 +5,104 @@ Created on Wed Feb  8 15:09:43 2017
 @author: quentinpeter
 """
 import numpy as np
-
-import diffusiosim as ds
+from matplotlib.pyplot import figure, plot
+import diffusiosim_diff as ds
 import matplotlib.pyplot as plt
 import matplotlib
+import time
 cmap = matplotlib.cm.get_cmap('viridis')
-#assert(np.max(np.abs(eigvals(F)))<=1.)
+# assert(np.max(np.abs(eigvals(F)))<=1.)
 
-#%
+#%%
 
-#settings
+# settings
 
-tmax=600 #Time in s
+tmax = 600  # Time in s
+L = 500e-6  # Length in m
 
+CsaltIN = 1 # Initial salt concentration in the channel
+CsaltOUT = 100  # Initial salt concentration out of the channel
 
-
-L=500e-6 #Length in m
-nx=100   #number of division of the x axis
-CsaltIN= 20  #Initial salt concentration in the channel
-CsaltOUT=.02 #Initial salt concentration out of the channel
-
-#Diffusion and diffusiophoresis coefficients
-Dprot=5.9e-11
-Dsalt=2*1e-9
-Ddiffph=-3e-11
+# Diffusion and diffusiophoresis coefficients
+Dprot = 4e-11#5.9e-11
+Dsalt = 2e-9
+Ddiffph = -1e-10
 
 
-nt=10    #Number of times at which to plot
-name='res_%.1fin_%.1foutNaCl'%(CsaltIN,CsaltOUT)
-reservoir=False  # Dead end or reservoir
+nt = 10  # Number of times at which to plot
+name = 'res_%.1fin_%.1foutNaCl' % (CsaltIN, CsaltOUT)
+reservoir = False  # Dead end or reservoir
+
+
+# get t for plotting
+times_plot = np.exp(np.linspace(0, np.log(tmax), nt))
+NX = [100]#np.array([50, 100, 200])
+posmax = np.zeros((len(NX), len(times_plot)))
+maxval = np.zeros((len(NX), len(times_plot)))
+timeit = np.zeros(len(NX))
 
 
 
+for j, nx in enumerate(NX):
+    nx = int(nx)
 
-#X = np.exp(np.linspace(np.log(1e-6), np.log(501e-6), nx))-1e-6
-X = np.linspace(0, L, nx)
-
-dx = L/nx
-Cx = ds.getCx(nx, dx, reservoir)
-
-#get t for plotting
-t=np.exp(np.linspace(0,np.log(tmax),nt))
-
-simulation = ds.diffusioSim(X, CsaltIN, CsaltOUT, Dprot, 
-                            Dsalt, Ddiffph, reservoir)
-             
-  
-
-#Start loop                          
-for i, dt in enumerate([t[0], *np.diff(t)]):
-    simulation.advance(dt)
-    c=cmap(i/(nt-1))
-    Csalt = CsaltOUT + (CsaltIN-CsaltOUT)*ds.C(X, t[i], Dsalt, L)
-    dCsalt = (CsaltIN-CsaltOUT)*ds.dC(X, t[i], Dsalt, L)
-    dlnCsalt = dCsalt/Csalt
-    plt.figure(1)
-    plt.plot(X*1e6, Csalt, c=c)
-    plt.figure(2)
-    plt.plot(X*1e6, dCsalt, c=c)
-    plt.figure(3)
-    plt.plot(X*1e6, dlnCsalt, c=c)
-    plt.figure(0)
-    plt.plot(X*1e6, simulation.Cprot, c=c)
-    
+    simulation = ds.diffusiophoresisIntegrator(
+                        L, nx, CsaltIN, CsaltOUT, Dprot,
+                        Dsalt, Ddiffph, reservoir, 1)
+    figure()
+    for i, t in enumerate(times_plot): 
+        plt.plot(np.linspace(0, L, nx)*1e6, simulation.dxlnq(t),
+                 c=cmap(i / len(times_plot)))
+    plt.xlabel('X [$\mu$m]')
+    plt.ylabel('Intensity')
+    plt.savefig('sgmout/dlnq_{}.pdf'.format(nx))
+        #%%
+    X = simulation.X*1e6
+    t0 = time.clock()
+    plt.figure()
+    # Start loop
+    results = np.zeros((nt, len(simulation.Cprot)))
+    for i, dt in enumerate([times_plot[0], *np.diff(times_plot)]):
+        simulation.advance(dt)
+        results[i] = simulation.Cprot
+        maxval[j, i] = np.max(simulation.Cprot)
+        posmax[j, i] = X[np.argmax(simulation.Cprot)]
         
-plt.figure(0)
-plt.xlabel(r'Position [$\mu$m]') 
-plt.xlim([0,500]) 
-#plt.ylim([0,3.5])
-plt.savefig('prot{:d}.pdf'.format(nx))
-plt.figure(1)
-plt.xlim([0,500])
-plt.savefig('salt{:d}.pdf'.format(nx))
-plt.figure(2)
-plt.xlim([0,500])
-plt.savefig('dsalt{:d}.pdf'.format(nx))
-plt.figure(3)
-plt.xlim([0,500])
-plt.ylim([0,300000])
-plt.savefig('dlnsalt{:d}.pdf'.format(nx))
+    for i, prof in enumerate(results):
+        plt.plot(X[X < 500], prof[X < 500], c=cmap(i / len(times_plot)))
+    plt.xlabel('X [$\mu$m]')
+    plt.ylabel('Intensity')
+    plt.savefig('sgmout/sim_{}.pdf'.format(nx))
+    timeit[j] = time.clock() - t0
+#%%
+#figure()
+#plot(np.diff(results, axis=0).T)
+#figure()
+#plot(np.diff(results, axis=1).T)
+#%%
+#plt.figure()
+#for i, ay in enumerate(maxval):
+#    plt.plot(t, ay, 'x-', c=cmap(i / (len(NX)-1)))
+#    
+#plt.xlabel('Time [s]')
+#plt.ylabel('Maximum')
+#plt.legend(NX)
+#plt.savefig('sgmout/Maximum.pdf')
 
-
-# plt.figure(1)
-# plt.xlabel(r'Position [$\mu$m]')  
-# plt.savefig(name + 'Cs.pdf')
-# plt.figure(2)
-# plt.xlabel(r'Position [$\mu$m]')  
-# plt.savefig(name + 'GCs.pdf')
-# plt.figure(3)
-# plt.xlabel(r'Position [$\mu$m]')   
-# plt.savefig(name + 'GlnCs.pdf') 
+#plt.figure()
+#for i, ay in enumerate(posmax):
+#    plt.plot(t, ay, 'x-', c=cmap(i / (len(NX)-1)))
+#plt.xlabel('Time [s]')
+#plt.ylabel('Maximum Position [$\mu$m]')
+#plt.legend(NX)
+#plt.savefig('sgmout/MaximumPos.pdf')
+#
+#c = np.polyfit(np.log(NX), np.log(timeit), 1)
+#plt.figure()
+#plt.semilogy(L*1e6/NX, timeit, 'x')
+##plt.plot(NX, np.exp(np.poly1d(c)(np.log(NX))))
+##plt.plot(L*1e6/NX, np.exp(c[1]-2)*NX**4)
+#plt.xlabel('Spatial step [$\mu$m]')
+#plt.ylabel('Computation Time [s]')
+#plt.legend(['Data', 'X^4'])
+#plt.savefig('sgmout/time.pdf')

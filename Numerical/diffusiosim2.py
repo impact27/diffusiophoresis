@@ -5,8 +5,9 @@ Created on Tue Aug 15 14:18:26 2017
 @author: quentinpeter
 """
 import numpy as np
-from scipy.linalg import toeplitz
 from numpy.linalg import eigvals
+import scipy.sparse as sp
+import scipy.sparse.linalg
 
 
 class diffusiophoresisIntegrator():
@@ -49,7 +50,7 @@ class diffusiophoresisIntegrator():
     def advance(self, t):
         """Advance the simulation by a time t"""
         nx = len(self._X)
-        I = np.eye(nx)
+        I = sp.eye(nx)
         dx = self._dx
         Dprot = self._settings["D protein"]
         dt0 = np.min(dx)**2 / Dprot / self._settings["time step factor"]
@@ -60,19 +61,17 @@ class diffusiophoresisIntegrator():
             dF, dt = self._Dx(dt0)
             dF += Cxx
 
-            # 0th position doesn't move
-            dF[0] = 0
-
             # Implicit method
-            F = np.linalg.inv(I - dt * dF)
+            F = sp.linalg.inv(I - dt * dF)
 #            F = I + dt*dF
 
             assert(len(np.shape(F)) == 2)
             self._Cprot = F@self._Cprot
+
             t = t - dt
             self._t += dt
 
-        print('eig', np.max(np.abs(eigvals(F))), np.max(self._Cprot))
+#        print('eig', np.max(np.abs(sp.linalg.eigs(F))), np.max(self._Cprot))
 
     @property
     def Cprot(self):
@@ -95,36 +94,15 @@ class diffusiophoresisIntegrator():
         self._q = q
         self._sigdx = sigdx
 
-        qp = 1 / 2 * (q[1] - q[0])
-        qp[0] = 0
-        qp = qp + q[0]
+        qp = 1 / 2 * (q[1] + q[0]) 
         qm = 1 / 2 * (q[0] - q[-1])
-        qm[:2] = 0
+        line = np.ones(nx)
+        line[:2] = 0
+        qm = sp.diags(line) @ qm
         qm = qm + q[-1]
 
         self._qp = qp
         self._qm = qm
-
-    def _Dx2(self, dt):
-        """Alternative method"""
-        dx = self._dx
-        q = self._q
-        D = self._settings["D salt"]
-        Cin = self._settings["salt in"]
-        Cout = self._settings["salt out"]
-        Ddp = self._settings["D diffusiophoresis"]
-
-        GlnC, GGlnC = getdiffs(self._X + dx / 2, self._t,
-                               D, self._L, Cin, Cout)
-#        Cx = 1/np.max(dx)/12*(-q[2]+8*q[1]-8*q[-1]+q[-2])
-    #    Cx = 1/np.max(dx)/4*(q[1]+3*q[0]-5*q[-1]+q[-2])
-        Cx = 1 / np.max(dx) / 2 * (q[1] - q[-1])
-    #    Cx = 1/np.max(dx)*(q[0]-q[-1])
-#        Cx = 1/np.max(dx)*(q[1]-q[0])
-
-        Cx[0] = 0
-
-        return Ddp * (GlnC[:, np.newaxis] * Cx + GGlnC[:, np.newaxis] * q[0]), dt
 
 #    @profile
     def _Dx(self, dt):
@@ -146,25 +124,13 @@ class diffusiophoresisIntegrator():
         if dt2 < dt:
             dt = dt2
 
-        up = up[:, np.newaxis]
-        um = um[:, np.newaxis]
-
-        fp = up * self._qp
-        fm = um * self._qm
+        fp = sp.diags(up) @ self._qp
+        fm = sp.diags(um) @ self._qm
 
         Dx = (fm - fp) / dx
-
-#        neg = -Ddp*(Cin-Cout) < 0
-#        assert not neg
-#        Dx = (um*q[-1 + neg] - up*q[0 + neg]
-#              + (.5 - neg) * ((um*sigdx[-1 + neg] - up*sigdx[0 + neg])
-#                              - dt / dx * (um**2*sigdx[-1 + neg]
-#                              - up**2*sigdx[0 + neg])))
-#
-#        Dx = 1/2*(um*(q[-1]+q[0]) - up*(q[0]+q[1]))
-#        Dx /= dx
+        
         return Dx, dt
-#    @profile
+
 
     def _initsalt(self, nN=100):
         """Prepare variables for the salt concentration distribution"""
@@ -201,116 +167,39 @@ class diffusiophoresisIntegrator():
         dCs = (2 / L) * np.sum(Cts * cos, 1)
 
         dlnCs = dCs / (Cout / (Cin - Cout) + Cs)
+
         return dlnCs
-    
-    def Csalt(self, t):
-        """Get dx ln(qs)"""
-        L = self._L
-        D = self._settings["D salt"]
-        Cin = self._settings["salt in"]
-        Cout = self._settings["salt out"]
-
-        N = self._salt_N
-        cos = self._salt_cos
-        sin = self._salt_sin
-
-        Cts = Ct(t, N, D, L)
-
-        Cs = (2 / np.pi) * np.sum((1 / (N + 0.5)) * Cts * sin, 1)
-        
-        return Cs
 
 
 def Ct(t, N, D, L):
     return np.exp(-D * (np.pi * (1 / 2 + N) / L)**2 * t)
 
-
-def C(x, t, D, L, nN=100):
-    x = x[:, np.newaxis]
-    N = np.arange(nN)[np.newaxis, :]
-    ret = (1 / (N + 0.5)) * Ct(t, N, D, L) * \
-        np.sin((np.pi / 2 + N * np.pi) / L * x)
-    return (2 / np.pi) * np.sum(ret, 1)
-
-
-def dC(x, t, D, L, nN=100):
-    x = x[:, np.newaxis]
-    N = np.arange(nN)[np.newaxis, :]
-    ret = (Ct(t, N, D, L) * np.cos((np.pi / 2 + N * np.pi) / L * x))
-    return (2 / L) * np.sum(ret, 1)
-
-
-def ddC(x, t, D, L, nN=100):
-    x = x[:, np.newaxis]
-    N = np.arange(nN)[np.newaxis, :]
-    ret = (N + 0.5) * Ct(t, N, D, L) * np.sin((np.pi / 2 + N * np.pi) / L * x)
-    return (-2 * np.pi / L**2) * np.sum(ret, 1)
-
-#@profile
-
-
-def getdiffs(x, t, D, L, Cin, Cout, nN=100):
-    x = x[:, np.newaxis]
-    N = np.arange(nN)[np.newaxis, :]
-
-    Cts = Ct(t, N, D, L)
-    xN = (np.pi / 2 + N * np.pi) / L * x
-
-    cos = np.cos(xN)
-    sin = np.sin(xN)
-
-    Cs = (2 / np.pi) * np.sum((1 / (N + 0.5)) * Cts * sin, 1)
-    dCs = (2 / L) * np.sum(Cts * cos, 1)
-    ddCs = (-2 * np.pi / L**2) * np.sum((N + 0.5) * Cts * sin, 1)
-
-    dlnCs = dCs / (Cout / (Cin - Cout) + Cs)
-
-    return dlnCs, (ddCs / (Cout / (Cin - Cout) + Cs) - (dlnCs)**2)
-
-# get differential operators matrix
-
-
 def getCxx(nx, dx, reservoir=False):
     q = getQs(nx)
     # toeplitz creation of matrice which repeat in diagonal
     Cxx = q[-1] - 2*q[0] + q[1]
-    Cxx[0, :] = 0
-    Cxx[-1, -1] = -1
     Cxx /= dx**2
-    # Change border conditions if asked
-    if reservoir:
-        Cxx[-1, :] = 0
-
     return Cxx
-
-
-def getCx(nx, dx, reservoir=False):
-    # get grad y operator
-    udiag1 = np.ones(nx - 1)
-    udiag2 = np.ones(nx - 2)
-    Cx = (np.diag(udiag2, -2)
-          + np.diag(-8 * udiag1, -1)
-          + np.diag(8 * udiag1, 1)
-          + np.diag(-udiag2, 2))
-    Cx[0, :] = 0
-    Cx[1, 0] = -7
-    Cx[-2:, -1] = 7
-    Cx /= (12 * dx)
-    if reservoir:
-        Cx[-1, :] = 0
-    return Cx
 
 
 def getQs(nX):
     # Create the q matrices
-    q = np.zeros((5, nX, nX))
+    q = [0] * 5
     for i in range(-2, 3):
-        q[i] = np.diag(np.ones(nX - np.abs(i)), i)
+        line = np.ones(nX - np.abs(i))
+        if i>=0:
+            line[0] = 0
+        q[i] = sp.diags(line, i)
+        if i == -2:
+            line = np.zeros(nX - 2)
+            line[0] = 1
+            q[i] += sp.diags(line, 2)
+        elif i>0:
+            for j in np.arange(0, i, 1):
+                line = np.zeros(nX - np.abs(j))
+                line[-1] = 1
+                q[i] += sp.diags(line, j)
 
-    # Border
-    q[-2, :2, 0] = 1
-    q[-1, 0, 0] = 1
-    q[1, -1, -1] = 1
-    q[2, -2:, -1] = 1
+    return np.asarray(q)
 
-    return q
+

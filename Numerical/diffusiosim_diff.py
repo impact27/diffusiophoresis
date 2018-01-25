@@ -22,8 +22,8 @@ class diffusiophoresisIntegrator():
 
         # create X with border on the left
         dx = L / nx
-        nx = nx + 1
-        X = np.linspace(0, L, nx) - dx / 2
+        nx = nx + 2
+        X = np.linspace(-dx, L, nx) - dx / 2
         self._X = X
         self._dx = dx
         self._nx = nx
@@ -31,7 +31,7 @@ class diffusiophoresisIntegrator():
 
         # init proteins concentration
         self._Cprot = np.zeros_like(X)
-        self._Cprot[0] = 1
+        self._Cprot[:2] = 1
         self._t = 0
 
         self._settings = {"salt in": CsaltIN,
@@ -52,7 +52,7 @@ class diffusiophoresisIntegrator():
         I = np.eye(nx)
         dx = self._dx
         Dprot = self._settings["D protein"]
-        dt0 = np.min(dx)**2 / Dprot / self._settings["time step factor"]
+        dt0 = np.min(dx)**2 / Dprot / self._settings["time step factor"]/20
         Cxx = Dprot * getCxx(nx, np.max(dx))
         while t > 0:
 
@@ -66,7 +66,6 @@ class diffusiophoresisIntegrator():
             # Implicit method
             F = np.linalg.inv(I - dt * dF)
 #            F = I + dt*dF
-
             assert(len(np.shape(F)) == 2)
             self._Cprot = F@self._Cprot
             t = t - dt
@@ -137,10 +136,10 @@ class diffusiophoresisIntegrator():
         uhalf = -Ddp * self.dxlnq(self._t + dt / 2)
         # Correct
         up = np.zeros(nx)
-        up[:-1] = uhalf
+        up[1:-1] = uhalf
         # Incorrect BUT don't care
         um = np.zeros(nx)
-        um[1:] = uhalf
+        um[2:] = uhalf
 
         dt2 = dx / np.max(np.abs(up)) / dtfrac
         if dt2 < dt:
@@ -170,7 +169,7 @@ class diffusiophoresisIntegrator():
         """Prepare variables for the salt concentration distribution"""
         L = self._L
         dx = self._dx
-        x = self._X[1:] - dx / 2
+        x = self._X[2:] - dx / 2
         x = x[:, np.newaxis]
         N = np.arange(nN)[np.newaxis, :]
 
