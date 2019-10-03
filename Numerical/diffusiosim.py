@@ -52,7 +52,7 @@ class diffusiophoresisIntegrator():
         I = np.eye(nx)
         dx = self._dx
         Dprot = self._settings["D protein"]
-        dt0 = np.min(dx)**2 / Dprot / self._settings["time step factor"]
+        dt0 = np.min(dx)**2 / Dprot / self._settings["time step factor"]/20
         Cxx = Dprot * getCxx(nx, np.max(dx))
         while t > 0:
 

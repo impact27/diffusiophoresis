@@ -13,13 +13,13 @@ import os
 import re
 
 #%%
-Analyte_list = ['NaCl', 'LiCl', 'KIO3', 'KCl']
-Protein_list = ['Thy', 'Myo', 'Ubi', 'MYO', 'INS']
+Analyte_list = ['GLU', 'GLY', 'Urea', 'NaOH', 'HCl']#['NaCl', 'LiCl', 'KIO3', 'KCl']
+Protein_list = ['Lys', 'Thy']#['Thy', 'Myo', 'Ubi', 'MYO', 'INS']
 FirstGoodFrame = 0
 contactTime = 0 #s
-Operator = 'Raphael Jacquat'
+Operator = 'Quentin Peter'
 height_m = 50e-6
-Q_ulph = 1000
+Q_ulph = 300
 Success = 3#1-3
 Zoom = 10
 pixelsize_m = 1.65e-6 #Base is 8 for Q camera and 4.54 for Evolve /Zoom * Binning
@@ -27,8 +27,8 @@ channel_width = 50e-6
 channel_height = 50e-6
 channel_length = 500e-6
 
-imagesfolderfn = "../Data/20170113/small_channel/i*/i*/"
-imagefn = "Pos0/*.tif"
+imagesfolderfn = "../Data/20180508/*/"
+imagefn = "*.tif"
 bglocfn = 'bg*/**/*.tif'
 
 Buffer_Info = "No Buffer"
@@ -46,16 +46,19 @@ devices_list = [
 
 device = devices_list[0]
 
-Analyte_re = "([\dp]+)(uM|mM|M|gpl)("+'|'.join(Analyte_list)+')'
-Protein_re = "([\dp]+)(uM|mM|M|gpl)("+'|'.join(Protein_list)+')'
-regexp = "(i|o)(?:"+Analyte_re+"|"+Protein_re+"|"+Analyte_re+Protein_re+")"
+Analyte_re = "(i|o)("+'|'.join(Analyte_list)+')'"_([\dp]+)(uM|mM|M|gpl)"
+Protein_re = "(i|o)("+'|'.join(Protein_list)+')'"_([\dp]+)(uM|mM|M|gpl)"
+regexp = "(?:"+Analyte_re+"|"\
+            +Protein_re+"|"\
+            +Analyte_re+Protein_re+"|"\
+            +Protein_re+Analyte_re+")"
 
 for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
     
     mdfolder = os.path.dirname(imagesfolder)
     
     #Metadata file location
-    mdfn = mdfolder + '_metadata.json'
+    mdfn = imagesfolder + '_metadata.json'
     
     #Images and corresponding BG (or None) relative to metadata
     fns = os.path.join(os.path.basename(mdfolder),
@@ -63,6 +66,7 @@ for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
     fns = os.path.join(fns, imagefn)
     
     bgfn = os.path.join(os.path.basename(mdfolder),
+                        os.path.basename(imagesfolder),
                         bglocfn)
     
     regexp_results = re.findall(regexp, imagesfolder)
@@ -79,31 +83,31 @@ for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
     analyte_unit = 'M'
     
     for result in regexp_results:
-        for i in range(3, len(result), 3):
+        for i in range(0, len(result), 4):
             if result[i] != '':
                 is_gpl = False
-                number = float(re.sub('p', '.', result[i-2]))
-                if result[i-1] == 'uM':
+                number = float(re.sub('p', '.', result[i+2]))
+                if result[i+3] == 'uM':
                     number *= 1e-6
-                elif result[i-1] == 'mM':
+                elif result[i+3] == 'mM':
                     number *= 1e-3
-                elif result[i-1] == 'gpl':
+                elif result[i+3] == 'gpl':
                     is_gpl = True
                 else:
-                    assert result[i-1] == 'M'
-                if result[i] in Protein_list:
-                    Protein = result[i]
-                    if result[0] == 'i':
+                    assert result[i+3] == 'M'
+                if result[i+1] in Protein_list:
+                    Protein = result[i+1]
+                    if result[i] == 'i':
                         ProteinIn_M = number
-                    elif result[0] == 'o':
+                    elif result[i] == 'o':
                         ProteinOut_M = number
                     if is_gpl:
                         protein_unit = 'g/l'
-                elif result[i] in Analyte_list:
-                    Analyte = result[i]
-                    if result[0] == 'i':
+                elif result[i+1] in Analyte_list:
+                    Analyte = result[i+1]
+                    if result[i] == 'i':
                         AnalyteIn_M = number
-                    elif result[0] == 'o':
+                    elif result[i] == 'o':
                         AnalyteOut_M = number
                     if is_gpl:
                         analyte_unit = 'g/l'
@@ -199,8 +203,8 @@ for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
         Metadata['Dead end length [m]'] = channel_length
         if bgfn is not None:
             bgfn = os.path.join(os.path.dirname(mdfolder), bgfn)
-            bgfn = glob(bgfn, recursive=True)[0]
-            bgfn = os.path.relpath(bgfn, os.path.dirname(mdfn))
+            bgfn = glob(bgfn, recursive=True)
+            bgfn = os.path.relpath(bgfn[0], os.path.dirname(mdfn))
             Metadata['Background File Name'] = bgfn
         Metadata['Times [s]'] = Time
         

@@ -44,8 +44,6 @@ outfolder = os.path.abspath(outfolder)
 if not os.path.isdir(outfolder):
     os.mkdir(outfolder)
     
-
-    
 #%% Treat data
 All_threshpos=[]
 All_times=[]

@@ -152,16 +152,20 @@ def get_images(metadata_fn, flatten=True):
             bgfn = os.path.join(os.path.dirname(metadata_fn), bgfn)
             bg = mpimg.imread(bgfn)
             
-            if signal_over_background <= 5:
+            if signal_over_background <= 10:
                 #only flatten if not too large
-                last_im = rmbg.remove_curve_background(
-                    last_im, bg, maskim=mask_last_im,
-                    reflatten=False, use_bg_curve=True)
-                mask_last_im = getmask(last_im)
-                ims = rmbg.remove_curve_background(
-                    ims, bg, maskim=mask_last_im,
-                    reflatten=False, use_bg_curve=True)
-                flatten = False
+                try:
+                    last_im = rmbg.remove_curve_background(
+                        last_im, bg, maskim=mask_last_im,
+                        reflatten=False, use_bg_curve=True)
+                    mask_last_im = getmask(last_im)
+                    ims = rmbg.remove_curve_background(
+                        ims, bg, maskim=mask_last_im,
+                        reflatten=False, use_bg_curve=True)
+                    flatten = False
+                except:
+                    ims = np.asarray(ims, float) - bg
+                    mask_last_im = getmask(ims[-1])
             else:
                 if bg.shape != ims.shape[1:]:
                     bg = cv2.resize(bg, ims.shape[:0:-1], interpolation=cv2.INTER_AREA)
@@ -353,7 +357,7 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
         content += '{}{}'.format(Cpin_str, Metadata['Proteins Type'])
 
     add = ''
-    number = re.findall('(\d+)_metadata.json', path[arg + 2])
+    number = re.findall('(\d+)_metadata.json', path[-1])
     if len(number) > 0:
         add = f'_{number[0]}'
 
@@ -375,6 +379,11 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
     imsout = imsout * (2**16 / np.nanmax(imsout))
     imsout = np.asarray(imsout, "uint16")
     imsave(os.path.join(outfn, content) + '.tif', imsout)
+    np.savez(os.path.join(outfn, content) + '.npz',
+             profiles=profiles, 
+             X_pos=X_pos, 
+             times=times)
+    
     
 def add_inset(ims, channel_position_px,
               profiles, metadata_fn, maskmargin, axis):

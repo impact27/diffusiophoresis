@@ -54,6 +54,8 @@ class diffusiophoresisIntegrator():
         Dprot = self._settings["D protein"]
         dt0 = np.min(dx)**2 / Dprot / self._settings["time step factor"]/20
         Cxx = Dprot * getCxx(nx, np.max(dx))
+        v = 0.001 #m/s
+        width = 50e-6
         while t > 0:
 
             # Update proteins
@@ -62,6 +64,11 @@ class diffusiophoresisIntegrator():
 
             # 0th position doesn't move
             dF[0] = 0
+            
+            # 1st position is resplenished
+            dF[1, 0] += v/width
+            dF[1, 1] -= v/width
+            # dF[1] = 0
 
             # Implicit method
             F = np.linalg.inv(I - dt * dF)
@@ -95,35 +102,35 @@ class diffusiophoresisIntegrator():
         self._sigdx = sigdx
 
         qp = 1 / 2 * (q[1] - q[0])
-        qp[0] = 0
+        qp[:2] = 0
         qp = qp + q[0]
         qm = 1 / 2 * (q[0] - q[-1])
-        qm[:2] = 0
+        qm[:3] = 0
         qm = qm + q[-1]
 
         self._qp = qp
         self._qm = qm
 
-    def _Dx2(self, dt):
-        """Alternative method"""
-        dx = self._dx
-        q = self._q
-        D = self._settings["D salt"]
-        Cin = self._settings["salt in"]
-        Cout = self._settings["salt out"]
-        Ddp = self._settings["D diffusiophoresis"]
+#     def _Dx2(self, dt):
+#         """Alternative method"""
+#         dx = self._dx
+#         q = self._q
+#         D = self._settings["D salt"]
+#         Cin = self._settings["salt in"]
+#         Cout = self._settings["salt out"]
+#         Ddp = self._settings["D diffusiophoresis"]
 
-        GlnC, GGlnC = getdiffs(self._X + dx / 2, self._t,
-                               D, self._L, Cin, Cout)
-#        Cx = 1/np.max(dx)/12*(-q[2]+8*q[1]-8*q[-1]+q[-2])
-    #    Cx = 1/np.max(dx)/4*(q[1]+3*q[0]-5*q[-1]+q[-2])
-        Cx = 1 / np.max(dx) / 2 * (q[1] - q[-1])
-    #    Cx = 1/np.max(dx)*(q[0]-q[-1])
-#        Cx = 1/np.max(dx)*(q[1]-q[0])
+#         GlnC, GGlnC = getdiffs(self._X + dx / 2, self._t,
+#                                D, self._L, Cin, Cout)
+# #        Cx = 1/np.max(dx)/12*(-q[2]+8*q[1]-8*q[-1]+q[-2])
+#     #    Cx = 1/np.max(dx)/4*(q[1]+3*q[0]-5*q[-1]+q[-2])
+#         Cx = 1 / np.max(dx) / 2 * (q[1] - q[-1])
+#     #    Cx = 1/np.max(dx)*(q[0]-q[-1])
+# #        Cx = 1/np.max(dx)*(q[1]-q[0])
 
-        Cx[0] = 0
+#         Cx[0] = 0
 
-        return Ddp * (GlnC[:, np.newaxis] * Cx + GGlnC[:, np.newaxis] * q[0]), dt
+#         return Ddp * (GlnC[:, np.newaxis] * Cx + GGlnC[:, np.newaxis] * q[0]), dt
 
 #    @profile
     def _Dx(self, dt):
@@ -134,6 +141,13 @@ class diffusiophoresisIntegrator():
         nx = self._nx
 
         uhalf = -Ddp * self.dxlnq(self._t + dt / 2)
+        dt2 = dx / np.max(np.abs(uhalf)) / dtfrac
+        if dt2 < dt:
+            dt = dt2/5
+            uhalf = -Ddp * self.dxlnq(self._t + dt / 2)
+            dt2 = dx / np.max(np.abs(uhalf)) / dtfrac
+            if dt2 < dt:
+                assert False
         # Correct
         up = np.zeros(nx)
         up[1:-1] = uhalf
@@ -141,9 +155,7 @@ class diffusiophoresisIntegrator():
         um = np.zeros(nx)
         um[2:] = uhalf
 
-        dt2 = dx / np.max(np.abs(up)) / dtfrac
-        if dt2 < dt:
-            dt = dt2
+        
 
         up = up[:, np.newaxis]
         um = um[:, np.newaxis]
@@ -273,7 +285,7 @@ def getCxx(nx, dx, reservoir=False):
     q = getQs(nx)
     # toeplitz creation of matrice which repeat in diagonal
     Cxx = q[-1] - 2*q[0] + q[1]
-    Cxx[0, :] = 0
+    Cxx[:2, :] = 0
     Cxx[-1, -1] = -1
     Cxx /= dx**2
     # Change border conditions if asked

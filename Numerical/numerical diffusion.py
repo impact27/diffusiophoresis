@@ -7,6 +7,7 @@ Created on Wed Feb  8 15:09:43 2017
 import numpy as np
 from matplotlib.pyplot import figure, plot
 import diffusiosim_diff as ds
+# import diffusiosim as ds
 import matplotlib.pyplot as plt
 import matplotlib
 import time
@@ -20,13 +21,13 @@ cmap = matplotlib.cm.get_cmap('viridis')
 tmax = 600  # Time in s
 L = 500e-6  # Length in m
 
-CsaltIN = 1 # Initial salt concentration in the channel
-CsaltOUT = 100  # Initial salt concentration out of the channel
+CsaltIN = 100 # Initial salt concentration in the channel
+CsaltOUT = 1  # Initial salt concentration out of the channel
 
 # Diffusion and diffusiophoresis coefficients
-Dprot = 4e-11#5.9e-11
-Dsalt = 2e-9
-Ddiffph = -1e-10
+Dprot = 5.9e-11#2e-11#
+Dsalt = 1e-9
+Ddiffph = -1.5e-10
 
 
 nt = 10  # Number of times at which to plot
