@@ -144,14 +144,14 @@ def get_images(metadata_fn, flatten=True):
         signal_over_background = (np.median(last_im[(1-mask_last_im)>0])
                                      / np.median(last_im[mask_last_im]))
 #        if signal_over_background <= 5:
-        
+
         if "Background File Name" in Metadata:
 #            try:
             # Load bg image
             bgfn = Metadata["Background File Name"]
             bgfn = os.path.join(os.path.dirname(metadata_fn), bgfn)
             bg = mpimg.imread(bgfn)
-            
+
             if signal_over_background <= 10:
                 #only flatten if not too large
                 try:
@@ -175,14 +175,13 @@ def get_images(metadata_fn, flatten=True):
                 ims /= bg_curve * np.nanmean(ims[..., mask_last_im])/np.nanmean(bg_curve)
                 ims -= 1
                 flatten = False
-                    
+
 #            except BaseException as e:
 #                print(f'----\n Failed background removal {metadata_fn}, {signal_over_background}\n ----')
-                    
+
         else:
             print(f"Skipped {metadata_fn}", signal_over_background)
-        
-            
+
         if flatten:
             last_image = ims[-1]
             ims -= np.nanmedian(ims[-1][mask_last_im])
@@ -197,45 +196,45 @@ def get_images(metadata_fn, flatten=True):
     channel_width_px = int(np.round(channel_width_um / pixel_size_um))
     angle, left_idx, right_idx, top_idx = get_normalized_side_channel(
         ims[-1], channel_width_px)
-    
+
     for im in ims:
         im[:] = ir.rotate_scale(im, -angle, 1, borderValue=np.nan)
 
-    #Normalise by the mean value of the fluorescence in the last 5 frames
+    # Normalise by the mean value of the fluorescence in the last 5 frames
     ims /= np.nanmedian(ims[-5:, :top_idx - 5])
-    
+
     channel_position_px = [left_idx, right_idx, top_idx]
     return ims, channel_position_px, times
-    
-    
+
+
 def get_profs(ims, channel_position_px, Metadata, maskmargin=20):
     """Extract profiles from flat images"""
     pixel_size_um = Metadata["Pixel Size [m]"] * 1e6
     channel_width_um = Metadata['Dead end width [m]'] * 1e6
     channel_width_px = int(np.round(channel_width_um / pixel_size_um))
     [left_idx, right_idx, top_idx] = channel_position_px
-    
-    #Get X_pos 
+
+    # Get X_pos
     X_pos = np.arange(ims[0].shape[0]) * pixel_size_um
     X_pos -= top_idx * pixel_size_um
 
-    #Get the profiles and the backgrounds
+    # Get the profiles and the backgrounds
     profiles = np.ones(np.shape(ims)[:2])
     background_profiles = np.ones(np.shape(ims)[:2])
-    
+
     data_mask = np.ones((ims[0].shape[1],))
     data_mask[left_idx - maskmargin:right_idx + maskmargin + 1] = 0
     data_mask = data_mask > 0
-    
+
     def filter_prof(profile):
         profile = np.array(profile)
         valid = np.isfinite(profile)
         profile[valid] = savgol_filter(profile[valid], 21, 1)
         profile[valid] = savgol_filter(profile[valid], 21, 1)
         return profile
-    
+
     for i, im in enumerate(ims):
-        backprof_raw = getBase(im, left_idx - maskmargin, 
+        backprof_raw = getBase(im, left_idx - maskmargin,
                                right_idx + maskmargin, data_mask)
         background_profiles[i] = filter_prof(backprof_raw)
 
@@ -275,8 +274,8 @@ def get_Conc_str(Cm):
 def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
                                    X_pos, profiles, background_profiles,
                                    metadata_fn, maskmargin, outfolder):
-    
-    
+
+
     cmap = matplotlib.cm.get_cmap('plasma')
     norm = LogNorm(vmin=.1, vmax=10)
     with open(metadata_fn) as f:
@@ -286,14 +285,12 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
     Cin = Metadata["Analyte Concentration In [M]"]
     Cout = Metadata["Analyte Concentration Out [M]"]
     pixel_size_um = Metadata["Pixel Size [m]"] * 1e6
-    
+
     plt.figure()
     # Create dummy colormap for times
     colors = plt.imshow([[.1, 10], [.1, 10]], cmap=cmap, norm=norm)
     plt.clf()
-    
-    
-    
+
     fig, ax = plt.subplots()
     # Plot curves
     for i, Y in enumerate(profiles):
@@ -314,9 +311,9 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
 
 #    ax.set_yticks(ax.get_yticks()[:-1])
     #ylim = ax.get_ylim()
-    
-    
-    
+
+
+
     add_inset(ims, channel_position_px,
               profiles, metadata_fn, maskmargin, ax)
 
@@ -355,6 +352,8 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
         content += '{}{}'.format(get_Conc_str(Cin), Metadata['Analyte Type'])
     if Cpin > 0:
         content += '{}{}'.format(Cpin_str, Metadata['Proteins Type'])
+    if Metadata['Analyte Type'] == 'H2O':
+        content += '0MH2O'
 
     add = ''
     number = re.findall('(\d+)_metadata.json', path[-1])
@@ -380,11 +379,11 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
     imsout = np.asarray(imsout, "uint16")
     imsave(os.path.join(outfn, content) + '.tif', imsout)
     np.savez(os.path.join(outfn, content) + '.npz',
-             profiles=profiles, 
-             X_pos=X_pos, 
+             profiles=profiles,
+             X_pos=X_pos,
              times=times)
-    
-    
+
+
 def add_inset(ims, channel_position_px,
               profiles, metadata_fn, maskmargin, axis):
     with open(metadata_fn) as f:
@@ -395,18 +394,18 @@ def add_inset(ims, channel_position_px,
     displayed_im_idx = np.nanargmax(np.nanmax(profiles, -1))
     if np.nanmax(profiles[displayed_im_idx]) < 1.2 * np.nanmax(profiles[-1]):
         displayed_im_idx = -1
-    
-    
+
+
     displayed_im = ims[displayed_im_idx, top_idx - 20:top_idx + int(500 / pixel_size_um) + 20,
                        left_idx - maskmargin:right_idx + 1 + maskmargin]
     #    toppos = np.shape(displayed_im)[0]-20
     rightpos = np.shape(displayed_im)[1] - maskmargin
-    
+
     displayed_im = cv2.GaussianBlur(displayed_im, (5, 5), 0)
-    
+
     vmin = np.nanmedian(ims[-1, top_idx:, :left_idx])
-    vmax = np.nanpercentile(displayed_im[20:, maskmargin:rightpos], 99)   
-    
+    vmax = np.nanpercentile(displayed_im[20:, maskmargin:rightpos], 99)
+
     pos = axis.get_position()
     print(pos.x0)
     xp = pos.x0+ 6/7  *pos.width
@@ -436,6 +435,6 @@ def add_inset(ims, channel_position_px,
                  0,
                  0
                  ]), 'r', alpha=.5)
-    
+
     ax2.set_xticks([])
     ax2.set_yticks([])

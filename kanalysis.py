@@ -14,47 +14,47 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import json
-#Load local libraries
+# Load local libraries
 
 
 
 
 from kCommun import get_profs, get_images, plot_and_save_diffusiophoresis
-#%%
+# %%
 
 
 threshold = .5
-outfolder = 'output_2017'
-mdfns = sorted(glob('../Data/20171*/*/*_metadata.json'))
-#mdfns = glob("../Data/20171129/small_channel/i200mMLiCl_o0p5gplMYO_metadata.json")
+outfolder = 'output_2018'
+mdfns = sorted(glob('../Data/2018*/*_metadata.json'))
+# mdfns = glob("../Data/20171129/small_channel/i200mMLiCl_o0p5gplMYO_metadata.json")
 maskmargin = 20
 
-#Get functions
+# Get functions
 cmap = matplotlib.cm.get_cmap('plasma')
 
-#%% Treat filenames
-#mdfns = glob(mdfns)
+# %% Treat filenames
+# mdfns = glob(mdfns)
 mdfns = [os.path.abspath(fn) for fn in mdfns]
 outfolder = os.path.abspath(outfolder)
 if not os.path.isdir(outfolder):
     os.mkdir(outfolder)
-    
 
-    
-#%% Treat data
+
+
+# %% Treat data
 
 skip = 0
-flatten=True
+flatten = True
 for metadata_number, fnmd in enumerate(mdfns[skip:]):
-    #Get info from metadata
+    # Get info from metadata
     print(fnmd, metadata_number + skip)
-    
+
     with open(fnmd) as f:
         Metadata = json.load(f)
-    
+
     success = Metadata["Success [1-3]"]
     date = Metadata['Date']
-#    print(success) 
+#    print(success)
     if success < 3:
         continue
     try:
@@ -65,11 +65,7 @@ for metadata_number, fnmd in enumerate(mdfns[skip:]):
         plot_and_save_diffusiophoresis(ims, channel_position_px, times,
                                        X_pos, profiles, background_profiles,
                                        fnmd, maskmargin, outfolder)
-        
+
         plt.show()
     except BaseException as e:
         print(e)
-    
-    
-
-

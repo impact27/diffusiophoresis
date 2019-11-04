@@ -59,7 +59,7 @@ for j, nx in enumerate(NX):
     plt.savefig('sgmout/dlnq_{}.pdf'.format(nx))
         #%%
     X = simulation.X*1e6
-    t0 = time.clock()
+    t0 = time.time()
     plt.figure()
     # Start loop
     results = np.zeros((nt, len(simulation.Cprot)))
@@ -74,7 +74,7 @@ for j, nx in enumerate(NX):
     plt.xlabel('X [$\mu$m]')
     plt.ylabel('Intensity')
     plt.savefig('sgmout/sim_{}.pdf'.format(nx))
-    timeit[j] = time.clock() - t0
+    timeit[j] = time.time() - t0
 #%%
 #figure()
 #plot(np.diff(results, axis=0).T)
