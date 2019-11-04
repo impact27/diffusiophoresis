@@ -22,9 +22,8 @@ from dph_processing import get_profs, get_images, plot_and_save_diffusiophoresis
 
 
 threshold = .5
-outfolder = 'output_2018'
-mdfns = sorted(glob('../Data/2018*/*_metadata.json'))
-# mdfns = glob("../Data/20171129/small_channel/i200mMLiCl_o0p5gplMYO_metadata.json")
+outfolder = '../Data/Experiments_Processed'
+mdfns = sorted(glob('../Data/Experiments/*/*_metadata.json'))[:1]
 maskmargin = 20
 
 # Get functions

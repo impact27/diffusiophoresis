@@ -7,6 +7,7 @@ Created on Mon Aug 13 15:29:14 2018
 Parse comsol txt file and save numpy file.
 """
 import numpy as np
+import os
 
 
 class ComsolParser():
@@ -110,7 +111,7 @@ def comsol_parse(fn):
     return parser.grid, parser.datasets
 
 
-def comsol_to_python(fn, name, mean_z=True):
+def comsol_to_python(fn, name, out_folder, mean_z=True):
     grid, dataset = comsol_parse(fn)
     times = None
     for data_name in dataset:
@@ -123,7 +124,7 @@ def comsol_to_python(fn, name, mean_z=True):
         # If remove z
         if mean_z and data.ndim == 4:
             data = np.mean(data, axis=-1)
-        np.save(fn, data)
+        np.save(os.path.join(out_folder, fn), data)
 
     axes = {'t': times}
     if mean_z:
@@ -132,49 +133,50 @@ def comsol_to_python(fn, name, mean_z=True):
         spatial_axes = ['x', 'y', 'z']
     for axis_name, axis in zip(spatial_axes, grid):
         axes[axis_name] = axis
-    np.savez(f"{name}_axes", **axes)
+    np.savez(os.path.join(out_folder, f"{name}_axes"), **axes)
 
 
 if __name__ == '__main__':
+    out_folder = '../Data/Simulations_Processed'
 
-    # fn = "Results/1d-2.txt"
-    # comsol_to_python(fn, 'k-device_gamma-1p5e-10_1d')
+    # fn = "../Data/Simulations/1d-2.txt"
+    # comsol_to_python(fn, 'k-device_gamma-1p5e-10_1d', out_folder)
 
-    # fn = "Results/2d-2.txt"
-    # comsol_to_python(fn, 'k-device_gamma-1p5e-10_2d')
+    # fn = "../Data/Simulations/2d-2.txt"
+    # comsol_to_python(fn, 'k-device_gamma-1p5e-10_2d', out_folder)
 
-    # fn = "Results/3d-2.txt"
-    # comsol_to_python(fn, 'k-device_gamma-1p5e-10_3d')
+    # fn = "../Data/Simulations/3d-2.txt"
+    # comsol_to_python(fn, 'k-device_gamma-1p5e-10_3d', out_folder)
 
     # for name in ['-1e-9', '-1e-10', '-1e-11']:
-    #     fn = f"Results/gamma_{name}.txt"
-    #     comsol_to_python(fn, f'k-device_gamma{name}')
+    #     fn = f"../Data/Simulations/gamma_{name}.txt"
+    #     comsol_to_python(fn, f'k-device_gamma{name}', out_folder)
 
     # for name in ['C', 'logC']:
-    #     fn = f"Results/{name}.txt"
-    #     comsol_to_python(fn, f'k-device_gamma-1.5e-10_{name}')
+    #     fn = f"../Data/Simulations/{name}.txt"
+    #     comsol_to_python(fn, f'k-device_gamma-1.5e-10_{name}', out_folder)
 
     # for name in ['10um', '20um', '50um', '100um']:
-    #     fn = f"Results/ramp_{name}.txt"
-    #     comsol_to_python(fn, f'k-device_gamma-1.5e-10_ramp_{name}')
+    #     fn = f"../Data/Simulations/ramp_{name}.txt"
+    #     comsol_to_python(fn, f'k-device_gamma-1.5e-10_ramp_{name}', out_folder)
 
     # for i, name in enumerate(
     #         ['0p1uM', '1uM', '10uM', '100uM', '1mM', '10mM']):
-    #     fn = f"Results/Cs_{i+1}.txt"
-    #     comsol_to_python(fn, f'k-device_gamma-1p5e-10_CsOut_{name}')
+    #     fn = f"../Data/Simulations/Cs_{i+1}.txt"
+    #     comsol_to_python(fn, f'k-device_gamma-1p5e-10_CsOut_{name}', out_folder)
 
     # for i, name in enumerate(
     #         np.fromstring('-2e-11 -5e-11 -1e-10 -2e-10 -5e-10', sep=' ')):
-    #     fn = f"Results/gamma_{i+1}.txt"
-    #     comsol_to_python(fn, f'k-device_gamma{name}')
+    #     fn = f"../Data/Simulations/gamma_{i+1}.txt"
+    #     comsol_to_python(fn, f'k-device_gamma{name}', out_folder)
 
     # for i, name in enumerate(
     #         np.fromstring('1e-10 2e-10 5e-10 1e-9 2e-9 5e-9 1e-8', sep=' ')):
-    #     fn = f"Results/Cs_{i+1}.txt"
-    #     comsol_to_python(fn, f'k-device_Ds_{name}')
+    #     fn = f"../Data/Simulations/Cs_{i+1}.txt"
+    #     comsol_to_python(fn, f'k-device_Ds_{name}', out_folder)
 
     for i, name in enumerate(
             np.fromstring('5e-12 1e-11 2e-11 5e-11 1e-10 2e-10 5e-10',
                           sep=' ')):
-        fn = f"Results/Dp_{i+1}.txt"
-        comsol_to_python(fn, f'k-device_Dp_{name}')
+        fn = f"../Data/Simulations/Dp_{i+1}.txt"
+        comsol_to_python(fn, f'k-device_Dp_{name}', out_folder)

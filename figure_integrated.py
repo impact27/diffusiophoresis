@@ -24,7 +24,7 @@ dateignore = ['20160907', '20160908', '20170315']  # '20170315',
 plotanalyte = ['KIO3']  # 'NaCl', 'LiCl', 'KIO3', 'KCl', 'Dextrose', 'CsCl'
 prot_list = ['BSA']
 threshold = .5
-outfolder = 'LiCl'  # 'best' + "".join(plotanalyte)
+outfolder = '../Plots/LiCl'  # 'best' + "".join(plotanalyte)
 
 # for folder in sorted(glob('../Data/2017*/')):
 #    folder = '../Data/2017*/'

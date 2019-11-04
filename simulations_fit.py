@@ -25,6 +25,7 @@ parameters_file = '../Data/Simulations_Processed/simulation_parameters.json'
 
 # Set names to fit
 set_names = ['Dim', 'CsOut', 'Gamma', 'Ds', 'Dp']
+set_names = ['Dp']
 
 # %% Loop over all the sets
 with open(sets_file, 'r') as f:

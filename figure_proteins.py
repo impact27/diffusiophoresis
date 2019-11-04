@@ -12,33 +12,34 @@ import matplotlib as mpl
 import json
 import cv2
 import matplotlib.gridspec as gridspec
+import os
 
 
 from dph_processing import get_profs, get_images, plot_and_save_diffusiophoresis, get_Conc_str, add_inset
 # %%
-
+outfolder = '../Plots'
 
 file_names = [
 
-    ["../Data/20171122/small_channel/i200mMLiCl_o1uMThy_metadata.json",
-     "../Data/20171122/small_channel/i200mMKCl_o10uMThy_metadata.json",
-     "../Data/20171122/small_channel/i200mMKIO3_o1uMThy_metadata.json", ],
+    ["../Data/Experiments/20171122/small_channel/i200mMLiCl_o1uMThy_metadata.json",
+     "../Data/Experiments/20171122/small_channel/i200mMKCl_o10uMThy_metadata.json",
+     "../Data/Experiments/20171122/small_channel/i200mMKIO3_o1uMThy_metadata.json", ],
 
-    ["../Data/20171116/small_channel/i200mMLiCl_o10uMBSA_metadata.json",
-     "../Data/20171116/small_channel/i200mMKCl_o10uMBSA_metadata.json",
-     "../Data/20171116/small_channel/i200mMKIO3_o10uMBSA_metadata.json", ],
+    ["../Data/Experiments/20171116/small_channel/i200mMLiCl_o10uMBSA_metadata.json",
+     "../Data/Experiments/20171116/small_channel/i200mMKCl_o10uMBSA_metadata.json",
+     "../Data/Experiments/20171116/small_channel/i200mMKIO3_o10uMBSA_metadata.json", ],
 
-    ["../Data/20171116/small_channel/i200mMLiCl_o10uMB-LAC_2_metadata.json",
-     "../Data/20171116/small_channel/i200mMKCl_o10uMB-LAC_metadata.json",
-     "../Data/20171116/small_channel/i200mMKIO3_o10uMB-LAC_metadata.json", ],
+    ["../Data/Experiments/20171116/small_channel/i200mMLiCl_o10uMB-LAC_2_metadata.json",
+     "../Data/Experiments/20171116/small_channel/i200mMKCl_o10uMB-LAC_metadata.json",
+     "../Data/Experiments/20171116/small_channel/i200mMKIO3_o10uMB-LAC_metadata.json", ],
 
-    ["../Data/20171129/small_channel/i200mMLiCl_o0p5gplMYO_metadata.json",
-     "../Data/20171129/small_channel/i200mMKCl_o0p5gplMYO_metadata.json",
-     "../Data/20171129/small_channel/i200mMKIO3_o0p5gplMYO_metadata.json", ],
+    ["../Data/Experiments/20171129/small_channel/i200mMLiCl_o0p5gplMYO_metadata.json",
+     "../Data/Experiments/20171129/small_channel/i200mMKCl_o0p5gplMYO_metadata.json",
+     "../Data/Experiments/20171129/small_channel/i200mMKIO3_o0p5gplMYO_metadata.json", ],
 
-    ["../Data/20171116/small_channel/i200mMLiCl_o10uMLYS_metadata.json",
-     "../Data/20171116/small_channel/i200mMKCl_o10uMLYS_metadata.json",
-     "../Data/20171116/small_channel/i200mMKIO3_o10uMLYS_metadata.json", ],
+    ["../Data/Experiments/20171116/small_channel/i200mMLiCl_o10uMLYS_metadata.json",
+     "../Data/Experiments/20171116/small_channel/i200mMKCl_o10uMLYS_metadata.json",
+     "../Data/Experiments/20171116/small_channel/i200mMKIO3_o10uMLYS_metadata.json", ],
 ]
 name = "figure_proteins"
 
@@ -141,4 +142,4 @@ for idx_prot, col_dict in enumerate(list_dict):
 
         add_inset(info_dict['ims'], info_dict['channel_position_px'],
                   info_dict['profiles'], info_dict['mdfn'], maskmargin, info_dict['axis'])
-plt.savefig(name+'.pdf')
+plt.savefig(os.path.join(outfolder, name+'.pdf'))

@@ -15,11 +15,11 @@ import json
 from dph_processing import get_profs, get_images, plot_and_save_diffusiophoresis
 
 # %%
-outfolder = 'timelapse'
+outfolder = '../Plots/timelapse'
 maskmargin = 20
 
 flatten = True
-fnmd = '../Data/20171116/small_channel/i200mMKIO3_o10uMLYS_metadata.json'
+fnmd = '../Data/Experiments/20171116/small_channel/i200mMKIO3_o10uMLYS_metadata.json'
 
 
 outfolder = os.path.abspath(outfolder)
