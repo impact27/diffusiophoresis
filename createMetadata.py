@@ -13,7 +13,8 @@ import os
 import re
 
 # %%
-Analyte_list = ['GLU', 'GLY', 'Urea', 'NaOH', 'HCl']  # ['NaCl', 'LiCl', 'KIO3', 'KCl']
+# ['NaCl', 'LiCl', 'KIO3', 'KCl']
+Analyte_list = ['GLU', 'GLY', 'Urea', 'NaOH', 'HCl']
 Protein_list = ['Lys', 'Thy']  # ['Thy', 'Myo', 'Ubi', 'MYO', 'INS']
 FirstGoodFrame = 0
 contactTime = 0  # s
@@ -36,22 +37,22 @@ Solvent = 'H2O'
 pump_infos = 'Nemesis'
 # Devices list
 devices_list = [
-        '500umX50um',
-        '2000umX200um',
-        '2650umx50um_curved',
-        '20mmx50um_curved',
-        '500umX50um_reservoir',
-        '2650umx50um_curved_reservoir',
-        ]
+    '500umX50um',
+    '2000umX200um',
+    '2650umx50um_curved',
+    '20mmx50um_curved',
+    '500umX50um_reservoir',
+    '2650umx50um_curved_reservoir',
+]
 
 device = devices_list[0]
 
 Analyte_re = "(i|o)(" + '|'.join(Analyte_list)+')' + r"_([\dp]+)(uM|mM|M|gpl)"
 Protein_re = "(i|o)(" + '|'.join(Protein_list)+')' + r"_([\dp]+)(uM|mM|M|gpl)"
 regexp = "(?:" + Analyte_re + "|"\
-            + Protein_re + "|"\
-            + Analyte_re + Protein_re + "|"\
-            + Protein_re + Analyte_re + ")"
+    + Protein_re + "|"\
+    + Analyte_re + Protein_re + "|"\
+    + Protein_re + Analyte_re + ")"
 
 for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
 

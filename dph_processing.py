@@ -141,19 +141,19 @@ def get_images(metadata_fn, flatten=True):
 
         mask_last_im = mask_last_im * mask_main_channel[:, np.newaxis] > 0
 
-        signal_over_background = (np.median(last_im[(1-mask_last_im)>0])
-                                     / np.median(last_im[mask_last_im]))
+        signal_over_background = (np.median(last_im[(1-mask_last_im) > 0])
+                                  / np.median(last_im[mask_last_im]))
 #        if signal_over_background <= 5:
 
         if "Background File Name" in Metadata:
-#            try:
+            #            try:
             # Load bg image
             bgfn = Metadata["Background File Name"]
             bgfn = os.path.join(os.path.dirname(metadata_fn), bgfn)
             bg = mpimg.imread(bgfn)
 
             if signal_over_background <= 10:
-                #only flatten if not too large
+                # only flatten if not too large
                 try:
                     last_im = rmbg.remove_curve_background(
                         last_im, bg, maskim=mask_last_im,
@@ -168,11 +168,13 @@ def get_images(metadata_fn, flatten=True):
                     mask_last_im = getmask(ims[-1])
             else:
                 if bg.shape != ims.shape[1:]:
-                    bg = cv2.resize(bg, ims.shape[:0:-1], interpolation=cv2.INTER_AREA)
+                    bg = cv2.resize(
+                        bg, ims.shape[:0:-1], interpolation=cv2.INTER_AREA)
                 bg_curve = rmbg.polyfit2d(bg, 2, mask=mask_last_im)
                 if np.any(bg_curve < 0):
                     raise RuntimeError("Problematic")
-                ims /= bg_curve * np.nanmean(ims[..., mask_last_im])/np.nanmean(bg_curve)
+                ims /= bg_curve * \
+                    np.nanmean(ims[..., mask_last_im])/np.nanmean(bg_curve)
                 ims -= 1
                 flatten = False
 
@@ -311,8 +313,6 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
 #    ax.set_yticks(ax.get_yticks()[:-1])
     #ylim = ax.get_ylim()
 
-
-
     add_inset(ims, channel_position_px,
               profiles, metadata_fn, maskmargin, ax)
 
@@ -390,11 +390,10 @@ def add_inset(ims, channel_position_px,
         Metadata = json.load(f)
     pixel_size_um = Metadata["Pixel Size [m]"]*1e6
     [left_idx, right_idx, top_idx] = channel_position_px
-    #Inset
+    # Inset
     displayed_im_idx = np.nanargmax(np.nanmax(profiles, -1))
     if np.nanmax(profiles[displayed_im_idx]) < 1.2 * np.nanmax(profiles[-1]):
         displayed_im_idx = -1
-
 
     displayed_im = ims[displayed_im_idx, top_idx - 20:top_idx + int(500 / pixel_size_um) + 20,
                        left_idx - maskmargin:right_idx + 1 + maskmargin]
@@ -408,8 +407,8 @@ def add_inset(ims, channel_position_px,
 
     pos = axis.get_position()
     print(pos.x0)
-    xp = pos.x0+ 6/7  *pos.width
-    yp = pos.y0 + 2/10  *pos.height
+    xp = pos.x0 + 6/7 * pos.width
+    yp = pos.y0 + 2/10 * pos.height
     wp = pos.width/10
     hp = pos.height*8/10
     ax2 = plt.axes([xp, yp, wp, hp])

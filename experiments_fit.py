@@ -45,8 +45,8 @@ for set_name in sets:
     # Extract data from file name
     for idx in results.index:
         pconc, punits, prot, sconc, sunits, salt = re.findall(
-                r'o([\d\.]+)(mM|gpl)([^_]+)_i(\d+)(m?M)(.+)',
-                results.loc[idx, 'name'])[0]
+            r'o([\d\.]+)(mM|gpl)([^_]+)_i(\d+)(m?M)(.+)',
+            results.loc[idx, 'name'])[0]
         pconc = float(pconc)
         sconc = float(sconc)
         if punits == 'M':
@@ -58,7 +58,7 @@ for set_name in sets:
         results.loc[idx, 'prot_conc'] = pconc
         results.loc[idx, 'salt_conc'] = sconc
         date = re.findall(
-                r'(\d{8})/', idx)[0]
+            r'(\d{8})/', idx)[0]
         results.loc[idx, 'date'] = date
 
     # Process each file

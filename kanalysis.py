@@ -4,7 +4,7 @@ Created on Wed Sep  7 14:35:39 2016
 
 @author: quentinpeter
 """
-#%% from matplotlib.pyplot import plot, imshow, show, colorbar
+# %% from matplotlib.pyplot import plot, imshow, show, colorbar
 
 
 from glob import glob
@@ -15,8 +15,6 @@ import matplotlib
 import numpy as np
 import json
 # Load local libraries
-
-
 
 
 from dph_processing import get_profs, get_images, plot_and_save_diffusiophoresis
@@ -40,7 +38,6 @@ if not os.path.isdir(outfolder):
     os.mkdir(outfolder)
 
 
-
 # %% Treat data
 
 skip = 0
@@ -61,7 +58,7 @@ for metadata_number, fnmd in enumerate(mdfns[skip:]):
         analyte = Metadata["Analyte Type"]
         ims, channel_position_px, times = get_images(fnmd, flatten=flatten)
         X_pos, profiles, background_profiles = get_profs(
-                ims, channel_position_px, Metadata, maskmargin=maskmargin)
+            ims, channel_position_px, Metadata, maskmargin=maskmargin)
         plot_and_save_diffusiophoresis(ims, channel_position_px, times,
                                        X_pos, profiles, background_profiles,
                                        fnmd, maskmargin, outfolder)

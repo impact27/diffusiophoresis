@@ -94,7 +94,7 @@ for set_name in set_names:
         # Get normalised profiles and select regions to fit
         norm_profiles, mask_times, idx_max = normalise_profile(profiles)
         end_intensity = (np.mean(profiles[:, 400:], axis=1)
-                         / np.mean(profiles[:,0]))
+                         / np.mean(profiles[:, 0]))
         mask_times = np.logical_and(mask_times, end_intensity < 0.2)
         mask_valid = times > 0
         beta_salt = Cs_outi / Cs_in

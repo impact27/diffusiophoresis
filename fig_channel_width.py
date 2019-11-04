@@ -38,7 +38,7 @@ with open(fnmd) as f:
 
 ims, channel_position_px, times = get_images(fnmd, flatten=flatten)
 X_pos, profiles, background_profiles = get_profs(
-        ims, channel_position_px, Metadata, maskmargin=maskmargin)
+    ims, channel_position_px, Metadata, maskmargin=maskmargin)
 plot_and_save_diffusiophoresis(ims, channel_position_px, times,
                                X_pos, profiles, background_profiles,
                                fnmd, maskmargin)

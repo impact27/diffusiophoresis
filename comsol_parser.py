@@ -19,17 +19,17 @@ class ComsolParser():
         self.grid = []
         self.datasets = {}
         self.functions = {
-                "Model:": self.ignore,
-                "Version:": self.ignore,
-                "Date:": self.ignore,
-                "Dimension:": self.load_dim,
-                "Nodes:": self.ignore,
-                "Expressions:": self.ignore,
-                "Description:": self.ignore,
-                "Length": self.ignore,
-                "Grid": self.load_grid,
-                "Data": self.load_data,
-                }
+            "Model:": self.ignore,
+            "Version:": self.ignore,
+            "Date:": self.ignore,
+            "Dimension:": self.load_dim,
+            "Nodes:": self.ignore,
+            "Expressions:": self.ignore,
+            "Description:": self.ignore,
+            "Length": self.ignore,
+            "Grid": self.load_grid,
+            "Data": self.load_data,
+        }
 
     def parse(self, fn):
         with open(fn) as f:
@@ -64,8 +64,8 @@ class ComsolParser():
 
         if var_name not in self.datasets:
             self.datasets[var_name] = {
-                    "times": [],
-                    "data": np.zeros((0, *self.shape))}
+                "times": [],
+                "data": np.zeros((0, *self.shape))}
 
         dataset = self.datasets[var_name]
 

@@ -208,8 +208,8 @@ def fit_and_plot(profiles, times, positions, idx_start,
                 '-.', color='black', label='Expected')
 
     ax.plot(similarity_solution.x,
-        similarity_solution.y[0]/np.max(similarity_solution.y[0]),
-        '-.', color='tab:cyan', label='Fit')
+            similarity_solution.y[0]/np.max(similarity_solution.y[0]),
+            '-.', color='tab:cyan', label='Fit')
     ax.set_ylim([-0.1, 1.1])
     ax.set_xlim([0, 1])
     ax.legend()

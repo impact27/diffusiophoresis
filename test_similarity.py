@@ -32,12 +32,12 @@ eta_fitted = np.zeros((2, len(scale)))
 max_intensity = np.zeros(len(scale))
 
 
-
 figure(1)
 figure(2)
 for idx, s in enumerate(scale):
     try:
-        fit = get_similarity(eta, s * beta_salt, phoresis_ratio, diffusion_ratio)
+        fit = get_similarity(eta, s * beta_salt,
+                             phoresis_ratio, diffusion_ratio)
         for i in [0, 1]:
             eta_fitted[i, idx] = get_max_infl(fit)[i]
         max_intensity[idx] = np.max(fit.y[0])
@@ -47,7 +47,8 @@ for idx, s in enumerate(scale):
             figure(1)
             plt.plot(fit.x[fit.x < 1], fit.y[0][fit.x < 1] / np.max(fit.y[0]))
             figure(2)
-            plt.plot(fit.x[fit.x < 1], - fit.y[1][fit.x < 1] / np.min(fit.y[1]))
+            plt.plot(fit.x[fit.x < 1], - fit.y[1]
+                     [fit.x < 1] / np.min(fit.y[1]))
     except:
         pass
 
