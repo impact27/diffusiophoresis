@@ -9,7 +9,28 @@ import numpy as np
 from matplotlib.pyplot import figure, plot
 import matplotlib.pyplot as plt
 
-from diffusiophoresis_fitting import get_similarity, get_max_infl
+from diffusiophoresis_fitting import get_similarity
+
+
+def get_max_infl(res):
+    """Get maximum and inflexion eta."""
+    arg_max = np.argmax(res.y[0])
+    if arg_max == 0:
+        eta_max = np.nan
+    else:
+        max_slice = slice(arg_max-1, arg_max+2)
+        max_fit = np.polyfit(res.x[max_slice], res.y[0, max_slice], 2)
+        eta_max = - max_fit[1] / (2 * max_fit[0])
+
+    arg_infl = np.argmin(res.y[1])
+    infl_slice = slice(arg_infl-1, arg_infl+2)
+    infl_fit = np.polyfit(res.x[infl_slice], res.y[1, infl_slice], 2)
+    eta_infl = - infl_fit[1] / (2 * infl_fit[0])
+
+    return eta_max, eta_infl
+
+
+
 
 salt_in_M = 2e-1
 salt_out_M = 1e-7
