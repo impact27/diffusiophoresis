@@ -15,7 +15,7 @@ import matplotlib.gridspec as gridspec
 
 
 
-from kCommun import get_profs, get_images, plot_and_save_diffusiophoresis, get_Conc_str, add_inset
+from dph_processing import get_profs, get_images, plot_and_save_diffusiophoresis, get_Conc_str, add_inset
 #%%
 
 

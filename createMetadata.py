@@ -12,17 +12,17 @@ import numpy as np
 import os
 import re
 
-#%%
-Analyte_list = ['GLU', 'GLY', 'Urea', 'NaOH', 'HCl']#['NaCl', 'LiCl', 'KIO3', 'KCl']
-Protein_list = ['Lys', 'Thy']#['Thy', 'Myo', 'Ubi', 'MYO', 'INS']
+# %%
+Analyte_list = ['GLU', 'GLY', 'Urea', 'NaOH', 'HCl']  # ['NaCl', 'LiCl', 'KIO3', 'KCl']
+Protein_list = ['Lys', 'Thy']  # ['Thy', 'Myo', 'Ubi', 'MYO', 'INS']
 FirstGoodFrame = 0
-contactTime = 0 #s
+contactTime = 0  # s
 Operator = 'Quentin Peter'
 height_m = 50e-6
 Q_ulph = 300
-Success = 3#1-3
+Success = 3  # 1-3
 Zoom = 10
-pixelsize_m = 1.65e-6 #Base is 8 for Q camera and 4.54 for Evolve /Zoom * Binning
+pixelsize_m = 1.65e-6  # Base is 8 for Q camera and 4.54 for Evolve /Zoom * Binning
 channel_width = 50e-6
 channel_height = 50e-6
 channel_length = 500e-6
@@ -46,42 +46,42 @@ devices_list = [
 
 device = devices_list[0]
 
-Analyte_re = "(i|o)("+'|'.join(Analyte_list)+')'"_([\dp]+)(uM|mM|M|gpl)"
-Protein_re = "(i|o)("+'|'.join(Protein_list)+')'"_([\dp]+)(uM|mM|M|gpl)"
-regexp = "(?:"+Analyte_re+"|"\
-            +Protein_re+"|"\
-            +Analyte_re+Protein_re+"|"\
-            +Protein_re+Analyte_re+")"
+Analyte_re = "(i|o)(" + '|'.join(Analyte_list)+')' + r"_([\dp]+)(uM|mM|M|gpl)"
+Protein_re = "(i|o)(" + '|'.join(Protein_list)+')' + r"_([\dp]+)(uM|mM|M|gpl)"
+regexp = "(?:" + Analyte_re + "|"\
+            + Protein_re + "|"\
+            + Analyte_re + Protein_re + "|"\
+            + Protein_re + Analyte_re + ")"
 
 for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
-    
+
     mdfolder = os.path.dirname(imagesfolder)
-    
-    #Metadata file location
+
+    # Metadata file location
     mdfn = imagesfolder + '_metadata.json'
-    
-    #Images and corresponding BG (or None) relative to metadata
+
+    # Images and corresponding BG (or None) relative to metadata
     fns = os.path.join(os.path.basename(mdfolder),
                        os.path.basename(imagesfolder))
     fns = os.path.join(fns, imagefn)
-    
+
     bgfn = os.path.join(os.path.basename(mdfolder),
                         os.path.basename(imagesfolder),
                         bglocfn)
-    
+
     regexp_results = re.findall(regexp, imagesfolder)
-    
+
     Analyte = ''
     Protein = ''
     AnalyteIn_M = 0
     ProteinIn_M = 0
-    
+
     AnalyteOut_M = 0
     ProteinOut_M = 0
-    
+
     protein_unit = 'M'
     analyte_unit = 'M'
-    
+
     for result in regexp_results:
         for i in range(0, len(result), 4):
             if result[i] != '':
@@ -111,40 +111,27 @@ for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
                         AnalyteOut_M = number
                     if is_gpl:
                         analyte_unit = 'g/l'
-                
-                
 
-    
-    
-    
-    
-    # =============================================================================
-    # 
-    # =============================================================================
-    
-    #Change WD
-    
+    # Change WD
     fullfns = sorted(glob(os.path.join(os.path.dirname(mdfolder), fns)))
-    
-    if len(fullfns)>0:
-        #Get date
-        date = re.findall('201\d\d\d\d\d', mdfolder)[-1]
-        
-        
-        #Extract interesting infos from imagej metadata
+
+    if len(fullfns) > 0:
+        # Get date
+        date = re.findall(r'201\d\d\d\d\d', mdfolder)[-1]
+
+        # Extract interesting infos from imagej metadata
         Time = np.zeros(len(fullfns), dtype=float)
         Exposure = np.zeros(len(fullfns), dtype=float)
         Binning = np.zeros(len(fullfns), dtype=int)
         for i, fn in enumerate(fullfns):
             with TiffFile(fn) as tif:
                 header = metaDataDict(tif)
-                
+
                 if 'ElapsedTime-ms' in header:
                     Time[i] = (header['ElapsedTime-ms'])
                 elif 'CustomIntervals_ms' in header:
                     Time = np.cumsum(header['CustomIntervals_ms'])
-                    
-                    
+
                 if 'Exposure-ms' in header:
                     Exposure[i] = (header['Exposure-ms'])
                 elif 'QCamera-Exposure' in header:
@@ -152,29 +139,27 @@ for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
 
                 if 'Binning' in header:
                     Binning[i] = (header['Binning'])
-                
-        Time/=1000
-        Exposure/=1000
+
+        Time /= 1000
+        Exposure /= 1000
         if np.all(Exposure == Exposure[0]) or np.all(np.isnan(Exposure)):
             Exposure = Exposure[0]
         else:
             Exposure = Exposure.tolist()
-            
+
         if np.all(Binning == Binning[0]):
             Binning = int(Binning[0])
         else:
             Binning = Binning.tolist()
-            
+
         Time = Time - Time[0]
         Time = Time.tolist()
-        
-        fullfns = [os.path.relpath(fn, os.path.dirname(mdfn)) for fn in fullfns]
+
+        fullfns = [os.path.relpath(fn, os.path.dirname(mdfn))
+                   for fn in fullfns]
         if len(fullfns) == 1:
             fullfns = fullfns[0]
-            
-        
-        
-                
+
         Metadata = {}
         Metadata['Operator'] = Operator
         Metadata['Date'] = date
@@ -189,8 +174,8 @@ for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
         Metadata['Buffer Infos'] = Buffer_Info
         Metadata['Device Type'] = device
         Metadata['Device Height [m]'] = height_m
-        Metadata['Binning'] = Binning 
-        Metadata['Zoom'] = Zoom 
+        Metadata['Binning'] = Binning
+        Metadata['Zoom'] = Zoom
         Metadata['Pixel Size [m]'] = pixelsize_m
         Metadata['Exposure Time [s]'] = Exposure
         Metadata['Solvent'] = Solvent
@@ -207,7 +192,6 @@ for imagesfolder in [os.path.abspath(f) for f in glob(imagesfolderfn)]:
             bgfn = os.path.relpath(bgfn[0], os.path.dirname(mdfn))
             Metadata['Background File Name'] = bgfn
         Metadata['Times [s]'] = Time
-        
+
         with open(mdfn, 'w') as f:
             json.dump(Metadata, f, indent=4)
-

@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 import json
 #Load local libraries
-from kCommun import get_profs, get_images, plot_and_save_diffusiophoresis
+from dph_processing import get_profs, get_images, plot_and_save_diffusiophoresis
 
 #%%
 outfolder = 'timelapse'

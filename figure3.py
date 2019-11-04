@@ -5,7 +5,7 @@ Created on Fri Jan 19 16:20:08 2018
 @author: quentinpeter
 """
 import numpy as np
-from kCommun import get_profs, get_images, plot_and_save_diffusiophoresis, get_Conc_str
+from dph_processing import get_profs, get_images, plot_and_save_diffusiophoresis, get_Conc_str
 from matplotlib.pyplot import figure, plot, imshow
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm

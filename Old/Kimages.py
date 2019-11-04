@@ -9,7 +9,7 @@ import matplotlib.image as mpimg
 import background_rm as rmbg
 from glob import glob
 from matplotlib.pyplot import figure, imshow, plot
-from kCommun import get_normalized_side_channel, getBase
+from dph_processing import get_normalized_side_channel, getBase
 
 fns='Data/20161201/i200o0p02/i200mMNaCl_o0p02mMNaCl7uMBSA_1/Pos0/*.tif'
 bgfn='Data/20161201/i200o0p02/bg/bg/Pos0/img_000000000_Default_000.tif'

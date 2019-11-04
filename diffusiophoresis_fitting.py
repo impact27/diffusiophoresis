@@ -77,83 +77,6 @@ def get_similarity(eta, beta, gamma_p, D_p):
     return solve_bvp(fun, bc, eta, y)
 
 
-def get_max_infl(res):
-    """Get maximum and inflexion eta."""
-    arg_max = np.argmax(res.y[0])
-    if arg_max == 0:
-        eta_max = np.nan
-    else:
-        max_slice = slice(arg_max-1, arg_max+2)
-        max_fit = np.polyfit(res.x[max_slice], res.y[0, max_slice], 2)
-        eta_max = - max_fit[1] / (2 * max_fit[0])
-
-    arg_infl = np.argmin(res.y[1])
-    infl_slice = slice(arg_infl-1, arg_infl+2)
-    infl_fit = np.polyfit(res.x[infl_slice], res.y[1, infl_slice], 2)
-    eta_infl = - infl_fit[1] / (2 * infl_fit[0])
-
-    return eta_max, eta_infl
-
-
-def fit_diffusiophoresis_1d(
-        diffusion_protein, diffusion_salt,
-        salt_in_M, salt_out_M, measured_eta, is_inflexion=True):
-
-    if len(np.shape(diffusion_protein)) > 0:
-        return np.asarray([
-                fit_diffusiophoresis_1d(
-                    Dp, diffusion_salt,
-                    salt_in_M, salt_out_M, eta, is_inflexion)
-                    for Dp, eta in zip(diffusion_protein, measured_eta)])
-
-    if len(np.shape(diffusion_salt)) > 0:
-        return np.asarray([
-                fit_diffusiophoresis_1d(
-                    diffusion_protein, Ds,
-                    salt_in_M, salt_out_M, eta, is_inflexion)
-                    for Ds, eta in zip(diffusion_salt, measured_eta)])
-
-    if len(np.shape(salt_in_M)) > 0:
-        return np.asarray([
-                fit_diffusiophoresis_1d(
-                    diffusion_protein, diffusion_salt,
-                    Cs_in, salt_out_M, eta, is_inflexion)
-                    for Cs_in, eta in zip(salt_in_M, measured_eta)])
-
-    if len(np.shape(salt_out_M)) > 0:
-        return np.asarray([
-                fit_diffusiophoresis_1d(
-                    diffusion_protein, diffusion_salt,
-                    salt_in_M, Cs_out, eta, is_inflexion)
-                    for Cs_out, eta in zip(salt_out_M, measured_eta)])
-
-    beta_salt = salt_out_M / salt_in_M
-    diffusion_ratio = diffusion_protein / diffusion_salt
-
-    # assert np.all(1e-3 < measured_eta < 1)
-    eta = 10 ** np.linspace(-4, 1, 1000)
-    eta[0] = 0
-
-    phoresis_ratios = 10**np.linspace(-3, 0.5, 100)
-
-    eta_fitted = np.zeros(len(phoresis_ratios))
-
-    if is_inflexion:
-        eta_idx = 1
-    else:
-        eta_idx = 0
-
-    for idx, phoresis_ratio in enumerate(phoresis_ratios):
-        fit = get_similarity(eta, beta_salt, phoresis_ratio, diffusion_ratio)
-        eta_fitted[idx] = get_max_infl(fit)[eta_idx]
-
-    interp_curve = interp1d(eta_fitted, phoresis_ratios)
-
-    diffusiophoresis_coefficient = interp_curve(measured_eta) * diffusion_salt
-
-    return diffusiophoresis_coefficient
-
-
 def similarity_LSE(fit_eta, fit_norm, norm_profiles, times, positions,
                    diffusion_salt, idx_start=None):
     """Compute lse between fit and data"""
@@ -177,6 +100,7 @@ def similarity_LSE(fit_eta, fit_norm, norm_profiles, times, positions,
 
 
 def normalise_profile(profiles):
+    """Normalise the profiles before fitting."""
     # renormalise positons
     maxfilt = maximum_filter(profiles, footprint=np.ones((1, 31)))
     max_mask = profiles == maxfilt
@@ -190,29 +114,6 @@ def normalise_profile(profiles):
         np.arange(np.shape(profiles)[0]), idx_max]
     norm_profiles = profiles / max_int[:, np.newaxis]
     return norm_profiles, mask_time, idx_max
-
-
-def get_Gamma(profiles, times, positions,
-              salt_out_M, salt_in_M,
-              diffusion_protein, diffusion_salt):
-
-    beta_salt = salt_out_M / salt_in_M
-    diffusion_ratio = diffusion_protein / diffusion_salt
-
-    # assert np.all(1e-3 < measured_eta < 1)
-    eta = 10 ** np.linspace(-4, 1, 1000)
-    eta[0] = 0
-
-    phoresis_ratios = 10**np.linspace(-3, 0.5, 100)
-
-    LSE = np.zeros(len(phoresis_ratios)) * np.nan
-    for idx, phoresis_ratio in enumerate(phoresis_ratios):
-        fit = get_similarity(eta, beta_salt, phoresis_ratio, diffusion_ratio)
-
-        LSE[idx] = similarity_LSE(fit.x, fit.y[0] / np.max(fit.y[0]),
-                                  profiles, times, positions, diffusion_salt)
-
-    return phoresis_ratios[np.argmin(LSE)] * diffusion_salt
 
 
 def fit_norm_profile(profiles, times, positions, idx_start,
@@ -232,6 +133,7 @@ def fit_norm_profile(profiles, times, positions, idx_start,
 
 
 def color(time):
+    """Get the color for a given time."""
     # Plot
     cmap = matplotlib.cm.get_cmap('plasma')
     norm = LogNorm(vmin=.1, vmax=10)

@@ -273,8 +273,7 @@ def get_Conc_str(Cm):
 
 def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
                                    X_pos, profiles, background_profiles,
-                                   metadata_fn, maskmargin, outfolder):
-
+                                   metadata_fn, maskmargin, outfolder=None):
 
     cmap = matplotlib.cm.get_cmap('plasma')
     norm = LogNorm(vmin=.1, vmax=10)
@@ -364,7 +363,8 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
                channel_type,
                content + add]
 
-
+    if outfolder is None:
+        return
 #    path[arg:])[:-14]#Remove _metadata.json
     outfn = os.path.join(outfolder, *folders)
     try:
