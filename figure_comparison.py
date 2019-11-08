@@ -109,7 +109,7 @@ plt.subplots_adjust(wspace=0.001)
 ax = plt.subplot2grid((1, Nprofs*10+1), (0, Nprofs*10), colspan=1, rowspan=1)
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                 norm=norm)
-cb1.set_label('Time [s]')
+cb1.set_label('Time [min]')
 
 plt.tight_layout(pad=0.001, h_pad=0.001, w_pad=0.001)
 plt.savefig(os.path.join(out_folder, name+'.pdf'))

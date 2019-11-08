@@ -35,7 +35,7 @@ Dp = 5.9e-11
 Ds = 1e-9
 Gamma = 1.5e-10
 
-Cout = .1e-3
+Cout = 1
 Cin = 200
 
 beta = Cout / Cin
@@ -44,6 +44,9 @@ init = [beta, Gamma/Ds, Dp/Ds]
 eta = 10 ** np.linspace(-2, 1, 1000)
 eta[0] = 0
 
+
+res = get_similarity(eta, *init)
+plt.semilogx(res.x, res.y[0]/100, '-')
 
 # %%
 beta, gamma_p, D_p = init
@@ -88,7 +91,7 @@ for gamma_p in gamma_ps:
 
 figure()
 plt.xlabel('gamma_p')
-plt.loglog(result_gamma['Max'], 'x')
+plt.semilogx(result_gamma['Max'], 'x')
 plt.semilogx(result_gamma['Inflexion'], 'x')
 
 infl_fit = np.polyfit(np.log(gamma_ps), np.log(result_gamma['Inflexion']), 1)

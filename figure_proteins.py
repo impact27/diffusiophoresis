@@ -108,7 +108,7 @@ for idx_prot, col_dict in enumerate(list_dict):
         if idx_salt > 0:
             plt.tick_params(
                 axis='y',          # changes apply to the x-axis
-                labelleft='off')  # labels along the bottom edge are off
+                labelleft=False)  # labels along the bottom edge are off
         else:
             plt.ylabel(Metadata['Proteins Type'], fontweight='bold')
 
@@ -131,7 +131,7 @@ for i in range(5):
                           colspan=1, rowspan=rowspan)
     cb1 = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                     norm=norm)
-    cb1.set_label('Time [s]')
+    cb1.set_label('Time [min]')
 
 
 plt.tight_layout(pad=0.001, h_pad=0.001, w_pad=0.001)

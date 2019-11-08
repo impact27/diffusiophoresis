@@ -16,7 +16,9 @@ from scipy.ndimage.filters import maximum_filter
 from scipy.interpolate import interp1d
 import json
 
-from diffusiophoresis_fitting import fit_and_plot, color
+from diffusiophoresis_fitting import (fit_diffusiophoresis,
+                                      plot_diffusiophoresis,
+                                      color)
 
 
 # %% Data
@@ -159,8 +161,13 @@ for set_name in sets:
         expected_Dp = DRh / expected_radius
 
         # Plot and fit
-        Dp, Gp = fit_and_plot(fit_profiles, fit_times, fit_positions, max_idx,
+        Dp, Gp = fit_diffusiophoresis(
+            fit_profiles, fit_times, fit_positions, max_idx,
+            beta_salt, Ds, fit_time_mask)
+
+        plot_diffusiophoresis(fit_profiles, fit_times, fit_positions, max_idx,
                               beta_salt, Ds, fit_time_mask,
+                              Dp, Gp,
                               expected_Dp=expected_Dp,
                               expected_Gp=expected_Gp)
 

@@ -9,7 +9,7 @@ import numpy as np
 from scipy.special import erf
 from scipy.integrate import solve_bvp
 from scipy.interpolate import interp1d
-from scipy.ndimage.filters import maximum_filter, gaussian_filter
+from scipy.ndimage.filters import maximum_filter
 from scipy.optimize import minimize
 
 from matplotlib.colors import LogNorm
@@ -116,11 +116,29 @@ def normalise_profile(profiles):
     return norm_profiles, mask_time, idx_max
 
 
-def fit_norm_profile(profiles, times, positions, idx_start,
-                     ratio_salt, diffusion_salt):
+def fit_diffusiophoresis(profiles, times, positions, idx_start,
+                         ratio_salt, diffusion_salt, time_mask):
+    """Fit diffusiophoresis"""
+    if not np.any(time_mask):
+        raise RuntimeError
+
+    profiles = profiles[time_mask]
+    times = times[time_mask]
+    idx_start = idx_start[time_mask]
+
+    # Hack to make the fitting work
+    eta_max = np.min(
+        positions[idx_start] / np.sqrt(4 * diffusion_salt * times))
+    if eta_max > 0.4:
+        offset = 1
+    elif eta_max > 0.3:
+        offset = .1
+    else:
+        offset = 0
 
     def lse_diffusiophoresis(x):
         Dp, Gp = x / 100
+        Gp += offset
         # assert np.all(1e-3 < measured_eta < 1)
         eta = 10 ** np.linspace(-4, 1, 1000)
         eta[0] = 0
@@ -129,7 +147,9 @@ def fit_norm_profile(profiles, times, positions, idx_start,
                               profiles, times, positions, diffusion_salt,
                               idx_start)
 
-    return minimize(lse_diffusiophoresis, [1, 5]).x/100
+    Dp, Gp = minimize(lse_diffusiophoresis, [1, 1]).x / 100
+    Gp += offset
+    return Dp * diffusion_salt, Gp * diffusion_salt
 
 
 def color(time):
@@ -140,41 +160,31 @@ def color(time):
     return cmap(norm(time/60))
 
 
-def fit_and_plot(profiles, times, positions, idx_start,
-                 ratio_salt, diffusion_salt, time_mask, *, plot_freq=1,
-                 expected=None, expected_Dp=None, expected_Gp=None):
-    """Fit the profiles and plot the result."""
-
-    if not np.any(time_mask):
-        raise RuntimeError
-
-    # Fit
-    fit_diffusiophoresis = fit_norm_profile(
-        profiles[time_mask], times[time_mask], positions,
-        idx_start[time_mask], ratio_salt, diffusion_salt)
-
-    Gp = fit_diffusiophoresis[1] * diffusion_salt
-    Dp = fit_diffusiophoresis[0] * diffusion_salt
-
+def plot_diffusiophoresis(profiles, times, positions, idx_start,
+                          ratio_salt, diffusion_salt, time_mask,
+                          fit_Dp, fit_Gp, *,
+                          plot_freq=1, expected_Dp=None, expected_Gp=None,
+                          ax=None):
     # Plot
     cmap = matplotlib.cm.get_cmap('plasma')
     norm = LogNorm(vmin=.1, vmax=10)
 
-    plt.figure()
-    # Create dummy colormap for times
-    colors = plt.imshow([[.1, 10], [.1, 10]], cmap=cmap, norm=norm)
-    plt.clf()
+    if ax is None:
+        plt.figure()
+        # Create dummy colormap for times
+        colors = plt.imshow([[.1, 10], [.1, 10]], cmap=cmap, norm=norm)
+        plt.clf()
 
-    fig, ax = plt.subplots()
-    fig.colorbar(colors, ax=ax).set_label(label='Time [min]')
+        fig, ax = plt.subplots()
+        fig.colorbar(colors, ax=ax).set_label(label='Time [min]')
 
     # Get similarity solution
     eta_tmp = 10 ** np.linspace(-4, 1, 1000)
     eta_tmp[0] = 0
     similarity_solution = get_similarity(
         eta_tmp, ratio_salt,
-        fit_diffusiophoresis[1],
-        fit_diffusiophoresis[0])
+        fit_Gp / diffusion_salt,
+        fit_Dp / diffusion_salt)
 
     expected_similarity = None
     if expected_Dp and expected_Gp:
@@ -184,15 +194,15 @@ def fit_and_plot(profiles, times, positions, idx_start,
             expected_Dp / diffusion_salt)
 
     # Plot selected parts
-    plt.plot(0, 0, '--', c='gray', label='Data')
+    ax.plot(0, 0, '--', c='gray', label='Data')
     for idx, prof in enumerate(profiles):
         if (idx + plot_freq//2) % plot_freq != 0:
             continue
         _eta = positions / np.sqrt(4 * diffusion_salt * times[idx])
         ax.plot(_eta, prof, '--', c=color(times[idx]))
 
-    plt.plot(0, 0, '-', c='gray', label='Selected Data')
-    for idx, prof in enumerate(profiles[time_mask]):
+    ax.plot(0, 0, '-', c='gray', label='Selected Data')
+    for idx, prof in enumerate(profiles):
         if (idx + plot_freq//2) % plot_freq != 0:
             continue
         if not time_mask[idx]:
@@ -213,7 +223,5 @@ def fit_and_plot(profiles, times, positions, idx_start,
     ax.set_ylim([-0.1, 1.1])
     ax.set_xlim([0, 1])
     ax.legend()
-    ax.set_xlabel('$\eta$')
+    ax.set_xlabel(r'$\eta$')
     ax.set_ylabel('Normalised profile')
-
-    return Dp, Gp
