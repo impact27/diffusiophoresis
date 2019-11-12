@@ -118,7 +118,7 @@ for idx_prot, col_dict in enumerate(list_dict):
         if idx_prot < 5-1:
             plt.tick_params(
                 axis='x',          # changes apply to the x-axis
-                labelbottom='off')  # labels along the bottom edge are off
+                labelbottom=False)  # labels along the bottom edge are off
         else:
             if idx_salt == 1:
                 plt.xlabel('Position [$\mu$m]')

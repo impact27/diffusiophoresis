@@ -29,7 +29,8 @@ parameters_file = '../Data/Simulations_Processed/simulation_parameters.json'
 plot_freq = 10
 
 # Set names to fit
-set_names = ['Dim', 'CsOut', 'Gamma', 'Ds', 'Dp']
+set_names = ['Dim', 'CsOut', 'Gamma', 'Dp', 'Ds']
+set_names = ['CsOut', 'Gamma', 'Dp', 'Ds']
 
 xlabel = {
     'Dim': 'Dimension',
@@ -81,10 +82,13 @@ with open(sets_file, 'r') as f:
     sets = json.load(f)
 Gmin = Gmax = Dmin = Dmax = 1
 all_results = {}
-for set_name in set_names:
+
+fig_ex = figure(figsize=(12, 8))
+fig = figure(figsize=(12, 8))
+for set_idx, set_name in enumerate(set_names):
     print(set_name)
-    axes_generator = get_31_axes()
-    fig_composite = next(axes_generator)
+#    axes_generator = get_31_axes()
+#    fig_composite = next(axes_generator)
     with open(parameters_file, 'r') as f:
         parameters = json.load(f)
 
@@ -170,10 +174,17 @@ for set_name in set_names:
         plt.title(names[idx])
         plt.savefig(os.path.join(figures_folder,
                                  f'{set_name}_{names[idx]}.pdf'))
-
-        if idx in [0, len(names) // 2, len(names) - 1]:
+        
+        title_dict = {
+            'CsOut': f'Ratio {numbers[idx]:.2f}',
+            'Gamma': f'Diffusiophoresis = {numbers[idx]} $m^2/s$',
+            'Ds': f'Salt diffusion = {numbers[idx]} $m^2/s$',
+            'Dp': f'Protein diffusion = {numbers[idx]} $m^2/s$'}
+        
+        if (set_name == 'CsOut' and idx == len(names) - 1) or idx == 0:
+            ax = plt.subplot2grid((2, 2), (set_idx%2, set_idx // 2),
+                                  fig=fig_ex)
             # Plot
-            ax = next(axes_generator)
             plot_diffusiophoresis(
                 norm_profiles[mask_valid], times[mask_valid], positions,
                 idx_max[mask_valid], Cs_outi / Cs_in,
@@ -183,7 +194,7 @@ for set_name in set_names:
                 expected_Dp=Dpi,
                 expected_Gp=Gammai,
                 ax=ax)
-            ax.set_title(names[idx])
+            ax.set_title(title_dict[set_name])
 
         # Save results
         results.at[numbers[idx], "Simulation diffusiophoresis"] = Gammai
@@ -198,26 +209,37 @@ for set_name in set_names:
         results.loc[:, "Fit diffusion"] /
         results.loc[:, "Simulation diffusion"])
     #%%
-    ax = next(axes_generator)
+#    ax = next(axes_generator)
+    ax = plt.subplot2grid((2, 2), (set_idx%2, set_idx // 2), fig=fig)
     ax.plot(diffusion_ratio.index, np.ones(len(diffusion_ratio)) - 1, 'k-.', label='Expected')
     ax.plot(100 * (diffusiophoresis_ratio - 1), 'x--', label='Diffusiophoresis')
     ax.plot(100 * (diffusion_ratio - 1), 'x--', label='Diffusion')
 
     ax.set_xlabel(xlabel[set_name])
-    ax.legend()
     # plt.title(set_name)
     # plt.yscale('log')
+    ylim = [-41, 41]
     ax.set_ylabel('Error [%]')
-    ax.set_ylim([-41, 41])
+    ax.set_ylim(ylim)
     if set_name == 'Dim':
         ax.set_xticks([1, 2, 3])
     if xlog:
         ax.set_xscale('log')
+        
+    parameter_dict = {
+        'CsOut': 'salt_concentartion_out',
+        'Gamma': 'diffusiophoresis_coefficient',
+        'Ds': 'salt_diffusion',
+        'Dp': 'protein_diffusion'}
 
-    plt.figure(fig_composite.number)
-    plt.savefig(os.path.join(figures_folder, f'{set_name}_error_ratios.pdf'))
-
-    plt.show()
+    
+    if set_name in parameter_dict:
+        regular_x = parameters[parameter_dict[set_name]]
+        if set_name == 'CsOut':
+            regular_x /= parameters['salt_concentartion_in']
+        ax.plot(np.ones(2) * np.abs(regular_x), ylim, '--', label='Reference')
+    ax.legend()
+#    plt.show()
 
     diffusion_error = np.sqrt(np.mean(np.square(diffusion_ratio - 1)))
     diffusiophoresis_error = np.sqrt(np.mean(np.square(
@@ -232,33 +254,10 @@ for set_name in set_names:
     Dmax = Dmax if Dmax > np.max(diffusion_ratio) else np.max(diffusion_ratio)
     all_results[set_name] = results
 
+plt.figure(fig.number)
+plt.tight_layout()
+plt.savefig(os.path.join(figures_folder, f'error_ratios.pdf'))
 
-#%%
-
-
-
-parameter_dict = {
-    'CsOut': 'salt_concentartion_out',
-    'Gamma': 'diffusiophoresis_coefficient',
-    'Ds': 'salt_diffusion',
-    'Dp': 'protein_diffusion'}
-
-default_value = all_results['CsOut'].loc[:, "Max intensity"].iat[0]
-for key in all_results:
-    results = all_results[key]
-    figure()
-    plt.loglog(results.loc[:, "Max intensity"] * 1e2, 'x--', label='Simulation')
-    plt.xlabel(xlabel[key])
-    plt.ylabel('Intensity')
-    if key in parameter_dict:
-        regular_x = parameters[parameter_dict[key]]
-        if key == 'CsOut':
-            regular_x /= parameters['salt_concentartion_in']
-        plt.plot(np.abs(regular_x), default_value * 1e2, 'x', label='Reference')
-
-    else:
-        plt.plot(2, default_value * 1e2, 'x')
-
-    plt.ylim([1, 2e3])
-    plt.legend()
-
+plt.figure(fig_ex.number)
+plt.tight_layout()
+plt.savefig(os.path.join(figures_folder, f'extreme_fit.pdf'))

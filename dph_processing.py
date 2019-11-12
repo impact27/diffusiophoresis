@@ -58,7 +58,8 @@ def get_normalized_side_channel(im, pxwidth, a=None, maxSide=None):
 
     # find the channel position
     prof = np.diff(np.nanmean(im, 1))
-    prof = scipy.signal.savgol_filter(prof, 21, 3)
+    valid = np.isfinite(prof)
+    prof[valid] = scipy.signal.savgol_filter(prof[valid], 21, 3)
     top_idx = np.nanargmin(prof[5:-5]) + 5
 
     border = int(np.ceil(np.abs(np.tan(ir.clamp_angle(a)) * im.shape[0])))

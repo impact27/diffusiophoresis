@@ -18,31 +18,43 @@ out_folder = '../Plots/comparison'
 file_names = ['../Data/Experiments/20170301/small_deadend/i200o0p02_2_metadata.json',
               "../Data/Experiments/20170301/small_deadend/i200o200_metadata.json",
               "../Data/Experiments/20170301/small_deadend/i0p02o200_metadata.json"]
+salt_conc = False
 proteins_conc = False
 name = 'figure_salt_a'
 
 file_names = ["../Data/Experiments/20170517/small_deadend/i100_o0p01_2_metadata.json",
               "../Data/Experiments/20170517/small_deadend/i100_o100_metadata.json",
               '../Data/Experiments/20170517/small_deadend/i0p01_o100_2_metadata.json']
+salt_conc = False
 proteins_conc = False
 name = 'figure_salt_b'
 
 file_names = ['../Data/Experiments/20171109/small_channel/i2MLiCl_o10uMBSA_3_metadata.json',
               "../Data/Experiments/20171109/small_channel/i2MLiCl_o100uMBSA_1_metadata.json",
               "../Data/Experiments/20171109/small_channel/i2MLiCl_o1000uMBSA_1_metadata.json"]
+salt_conc = False
 proteins_conc = True
 name = 'figure_prot_a'
 
-file_names = ["../Data/Experiments/20171122/small_channel/i200mMLiCl_o1uMThy_metadata.json",
-              "../Data/Experiments/20171122/small_channel/i200mMLiCl_o10uMThy_metadata.json"]
-proteins_conc = True
-name = 'figure_prot_b'
+# file_names = ["../Data/Experiments/20171122/small_channel/i200mMLiCl_o1uMThy_metadata.json",
+#               "../Data/Experiments/20171122/small_channel/i200mMLiCl_o10uMThy_metadata.json"]
+# salt_conc = False
+# proteins_conc = True
+# name = 'figure_prot_b'
 
-file_names = ["../Data/Experiments/20171116/small_channel/i200mMKIO3_o10uMLYS_metadata.json",
-              "../Data/Experiments/20171109/small_channel/i200mMKIO3_o100uMLYS_1_metadata.json",
+# file_names = ["../Data/Experiments/20171116/small_channel/i200mMKIO3_o10uMLYS_metadata.json",
+#               "../Data/Experiments/20171109/small_channel/i200mMKIO3_o100uMLYS_1_metadata.json",
+#               ]
+# salt_conc = False
+# proteins_conc = True
+# name = 'figure_prot_c'
+
+file_names = ["../Data/Experiments/20171122/small_channel/i200mMLiCl_o1uMThy_metadata.json",
+              "../Data/Experiments/20180427/oThy_0p5gpl_iNaOH_1M_1_metadata.json"
               ]
+salt_conc = True
 proteins_conc = True
-name = 'figure_prot_c'
+name = 'figure_prot_d'
 
 cmap = mpl.cm.get_cmap('plasma')
 norm = LogNorm(vmin=.1, vmax=10)
@@ -75,7 +87,11 @@ for i, (X_pos, profiles, times, Metadata) in enumerate(zip(
         list_X, list_profiles, list_times, list_Metadata)):
     ax = plt.subplot2grid((1, Nprofs*10+1), (0, 10*i), colspan=10, rowspan=1)
 
-    if proteins_conc:
+    if salt_conc:
+        Cpout = Metadata['Analyte Concentration In [M]']
+        ptype = Metadata['Analyte Type']
+        myTitle = r"{}: {:g}M".format(ptype, Cpout)
+    elif proteins_conc:
         Cpout = Metadata['Proteins Concentration Out [M]']*1e6
         ptype = Metadata['Proteins Type']
         myTitle = r"{}: {:g}$\mu$M".format(ptype, Cpout)
@@ -98,11 +114,12 @@ for i, (X_pos, profiles, times, Metadata) in enumerate(zip(
     if i > 0:
         plt.tick_params(
             axis='y',          # changes apply to the x-axis
-            labelleft='off')  # labels along the bottom edge are off
+            labelleft=False)  # labels along the bottom edge are off
     if i == 1:
         plt.xlabel('Position [$\mu$m]')
     if i == 0:
         plt.ylabel('Intensity [a.u.]')
+    print(np.nanmax(profiles))
 
 plt.subplots_adjust(wspace=0.001)
 # %

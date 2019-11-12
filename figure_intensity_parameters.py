@@ -74,4 +74,5 @@ for idx, key in enumerate(set_names):
 
     plt.ylim([1, 2e3])
     plt.legend()
+plt.tight_layout()
 plt.savefig('../Plots/intensity_parameters.pdf')

@@ -125,20 +125,19 @@ def fit_diffusiophoresis(profiles, times, positions, idx_start,
     profiles = profiles[time_mask]
     times = times[time_mask]
     idx_start = idx_start[time_mask]
-
-    # Hack to make the fitting work
+    
+    # Estimate initial values from eta_max
     eta_max = np.min(
         positions[idx_start] / np.sqrt(4 * diffusion_salt * times))
     if eta_max > 0.4:
-        offset = 1
+        init = [-2, 0]
     elif eta_max > 0.3:
-        offset = .1
+        init = [-3, -1.5]
     else:
-        offset = 0
+        init = [-3, -3]
 
     def lse_diffusiophoresis(x):
-        Dp, Gp = x / 100
-        Gp += offset
+        Dp, Gp = np.exp(x)
         # assert np.all(1e-3 < measured_eta < 1)
         eta = 10 ** np.linspace(-4, 1, 1000)
         eta[0] = 0
@@ -147,8 +146,7 @@ def fit_diffusiophoresis(profiles, times, positions, idx_start,
                               profiles, times, positions, diffusion_salt,
                               idx_start)
 
-    Dp, Gp = minimize(lse_diffusiophoresis, [1, 1]).x / 100
-    Gp += offset
+    Dp, Gp = np.exp(minimize(lse_diffusiophoresis, init).x)
     return Dp * diffusion_salt, Gp * diffusion_salt
 
 
