@@ -17,7 +17,7 @@ import json
 from matplotlib.colors import LogNorm
 
 
-from dph_processing import get_profs, get_images, plot_and_save_diffusiophoresis
+from diffusiophoresis_processing import get_profs, get_images, plot_and_save_diffusiophoresis
 # %%
 
 dateignore = ['20160907', '20160908', '20170315']  # '20170315',

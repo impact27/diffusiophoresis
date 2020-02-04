@@ -18,7 +18,7 @@ import json
 # Load local libraries
 from matplotlib.colors import LogNorm
 
-from dph_processing import (get_profs, get_images,
+from diffusiophoresis_processing import (get_profs, get_images,
                             plot_and_save_diffusiophoresis)
 
 

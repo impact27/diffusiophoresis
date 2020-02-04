@@ -165,6 +165,8 @@ for set_name in sets:
             fit_profiles, fit_times, fit_positions, max_idx,
             beta_salt, Ds, fit_time_mask)
 
+        print(Dp, Gp)
+        print(expected_Dp, expected_Gp)
         plot_diffusiophoresis(fit_profiles, fit_times, fit_positions, max_idx,
                               beta_salt, Ds, fit_time_mask,
                               Dp, Gp,
@@ -203,7 +205,7 @@ plt.xlabel('Hydrodynamic radius [$nm$]')
 plt.ylabel('Fitted Diffusion [$m^2/s$]')
 plt.savefig(os.path.join(save_dir, 'Results_diffusion.pdf'))
 
-
+# %%
 figure()
 mus = []
 for set_name in results_list:
@@ -223,7 +225,7 @@ for set_name in results_list:
                  label=set_name)
     mus.append(mobility)
 
-plt.plot(mus, mus, 'k-.', label='Expected')
+plt.plot(np.abs(mus), np.abs(mus), 'k-.', label='Expected')
 
 plt.yscale('log')
 plt.xscale('log')
