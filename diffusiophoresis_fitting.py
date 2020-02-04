@@ -4,6 +4,12 @@
 Created on Thu May 16 07:15:24 2019
 
 @author: quentinpeter
+
+Fit diffusiophoresis experiemnts.
+
+This script is distributed under CC BY-NC-SA version 4.0. You should have
+recieved a copy of the licence along with it. If not, see
+https://creativecommons.org/licenses/by-nc-sa/4.0/.
 """
 import numpy as np
 from scipy.special import erf
@@ -125,7 +131,7 @@ def fit_diffusiophoresis(profiles, times, positions, idx_start,
     profiles = profiles[time_mask]
     times = times[time_mask]
     idx_start = idx_start[time_mask]
-    
+
     # Estimate initial values from eta_max
     eta_max = np.min(
         positions[idx_start] / np.sqrt(4 * diffusion_salt * times))

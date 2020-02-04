@@ -6,6 +6,10 @@ Created on Wed Oct 23 18:23:43 2019
 @author: quentinpeter
 
 Fits the comsol simulations
+
+This script is distributed under CC BY-NC-SA version 4.0. You should have
+recieved a copy of the licence along with it. If not, see
+https://creativecommons.org/licenses/by-nc-sa/4.0/.
 """
 
 import numpy as np
@@ -174,13 +178,13 @@ for set_idx, set_name in enumerate(set_names):
         plt.title(names[idx])
         plt.savefig(os.path.join(figures_folder,
                                  f'{set_name}_{names[idx]}.pdf'))
-        
+
         title_dict = {
             'CsOut': f'Ratio {numbers[idx]:.2f}',
             'Gamma': f'Diffusiophoresis = {numbers[idx]} $m^2/s$',
             'Ds': f'Salt diffusion = {numbers[idx]} $m^2/s$',
             'Dp': f'Protein diffusion = {numbers[idx]} $m^2/s$'}
-        
+
         if (set_name == 'CsOut' and idx == len(names) - 1) or idx == 0:
             ax = plt.subplot2grid((2, 2), (set_idx%2, set_idx // 2),
                                   fig=fig_ex)
@@ -225,14 +229,14 @@ for set_idx, set_name in enumerate(set_names):
         ax.set_xticks([1, 2, 3])
     if xlog:
         ax.set_xscale('log')
-        
+
     parameter_dict = {
         'CsOut': 'salt_concentartion_out',
         'Gamma': 'diffusiophoresis_coefficient',
         'Ds': 'salt_diffusion',
         'Dp': 'protein_diffusion'}
 
-    
+
     if set_name in parameter_dict:
         regular_x = parameters[parameter_dict[set_name]]
         if set_name == 'CsOut':

@@ -4,6 +4,10 @@
 Created on Thu Oct  3 16:32:09 2019
 
 @author: quentinpeter
+
+This script is distributed under CC BY-NC-SA version 4.0. You should have
+recieved a copy of the licence along with it. If not, see
+https://creativecommons.org/licenses/by-nc-sa/4.0/.
 """
 import numpy as np
 from matplotlib.pyplot import figure, plot

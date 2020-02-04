@@ -5,6 +5,10 @@ Created on Mon Aug 13 15:29:14 2018
 @author: Quentin Peter
 
 Parse comsol txt file and save numpy file.
+
+This script is distributed under CC BY-NC-SA version 4.0. You should have
+recieved a copy of the licence along with it. If not, see
+https://creativecommons.org/licenses/by-nc-sa/4.0/.
 """
 import numpy as np
 import os

@@ -3,6 +3,10 @@
 Created on Fri Jan 19 16:20:08 2018
 
 @author: quentinpeter
+
+This script is distributed under CC BY-NC-SA version 4.0. You should have
+recieved a copy of the licence along with it. If not, see
+https://creativecommons.org/licenses/by-nc-sa/4.0/.
 """
 import numpy as np
 from diffusiophoresis_processing import get_profs, get_images, plot_and_save_diffusiophoresis, get_Conc_str

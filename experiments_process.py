@@ -3,7 +3,15 @@
 Created on Wed Sep  7 14:35:39 2016
 
 @author: quentinpeter
+
+Process the experiments
+
+This script is distributed under CC BY-NC-SA version 4.0. You should have
+recieved a copy of the licence along with it. If not, see
+https://creativecommons.org/licenses/by-nc-sa/4.0/.
 """
+
+
 # %% from matplotlib.pyplot import plot, imshow, show, colorbar
 
 
