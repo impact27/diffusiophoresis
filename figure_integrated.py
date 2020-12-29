@@ -82,7 +82,7 @@ for metadata_number, fnmd in enumerate(mdfns):
         print(Metadata['Proteins Concentration Out [M]'])
         continue
     ims, channel_position_px, times = get_images(fnmd, flatten=flatten)
-    X_pos, profiles, background_profiles = get_profs(
+    X_pos, profiles, background_profiles, profiles_std = get_profs(
         ims, channel_position_px, Metadata, maskmargin=maskmargin)
 
     valid = np.logical_and(X_pos > 0, X_pos < 500)

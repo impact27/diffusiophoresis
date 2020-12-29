@@ -73,7 +73,7 @@ for i, fnmd in enumerate(file_names):
     with open(fnmd) as f:
         Metadata = json.load(f)
     ims, channel_position_px, times = get_images(fnmd)
-    X_pos, profiles, background_profiles = get_profs(
+    X_pos, profiles, background_profiles, profiles_std = get_profs(
         ims, channel_position_px, Metadata)
 
     list_profiles.append(profiles)

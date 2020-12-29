@@ -31,7 +31,7 @@ from diffusiophoresis_processing import get_profs, get_images, plot_and_save_dif
 
 threshold = .5
 outfolder = '../Data/Experiments_Processed'
-mdfns = sorted(glob('../Data/Experiments/*/*_metadata.json'))[:1]
+mdfns = sorted(glob('../Data/Experiments/**/*_metadata.json', recursive=True))
 maskmargin = 20
 
 # Get functions
@@ -64,11 +64,11 @@ for metadata_number, fnmd in enumerate(mdfns[skip:]):
     try:
         analyte = Metadata["Analyte Type"]
         ims, channel_position_px, times = get_images(fnmd, flatten=flatten)
-        X_pos, profiles, background_profiles = get_profs(
+        X_pos, profiles, background_profiles, profiles_std = get_profs(
             ims, channel_position_px, Metadata, maskmargin=maskmargin)
         plot_and_save_diffusiophoresis(ims, channel_position_px, times,
                                        X_pos, profiles, background_profiles,
-                                       fnmd, maskmargin, outfolder)
+                                       fnmd, maskmargin, profiles_std, outfolder)
 
         plt.show()
     except BaseException as e:

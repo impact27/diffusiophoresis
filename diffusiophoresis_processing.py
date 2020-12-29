@@ -64,8 +64,11 @@ def get_normalized_side_channel(im, pxwidth, a=None, maxSide=None):
     im = ir.rotate_scale(im, -a, 1, borderValue=np.nan)
 
     # find the channel position
-    prof = np.diff(np.nanmean(im, 1))
-    valid = np.isfinite(prof)
+    prof = np.diff(np.nanmedian(im, 1))
+    nvalid = np.sum(np.isfinite(np.diff(im, axis=0)), 1)
+    valid = (np.isfinite(prof)
+             & (nvalid >= np.median(nvalid) * 4 / 5))
+    prof[~valid] = np.nan
     prof[valid] = scipy.signal.savgol_filter(prof[valid], 21, 3)
     top_idx = np.nanargmin(prof[5:-5]) + 5
 
@@ -230,6 +233,7 @@ def get_profs(ims, channel_position_px, Metadata, maskmargin=20):
 
     # Get the profiles and the backgrounds
     profiles = np.ones(np.shape(ims)[:2])
+    profiles_std = np.ones(np.shape(ims)[:2])
     background_profiles = np.ones(np.shape(ims)[:2])
 
     data_mask = np.ones((ims[0].shape[1],))
@@ -253,7 +257,11 @@ def get_profs(ims, channel_position_px, Metadata, maskmargin=20):
             channel_im[:, channel_width_px // 4:-channel_width_px // 4], 1)
 
         profiles[i] = filter_prof(channel_prof_raw)
-    return X_pos, profiles, background_profiles
+        profiles_std[i] = (
+            np.nanstd(im[:, :left_idx - maskmargin], 1)
+            / np.sqrt(channel_width_px//2))
+
+    return X_pos, profiles, background_profiles, profiles_std
 
 
 def get_Conc_str(Cm):
@@ -283,7 +291,7 @@ def get_Conc_str(Cm):
 
 def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
                                    X_pos, profiles, background_profiles,
-                                   metadata_fn, maskmargin, outfolder=None):
+                                   metadata_fn, maskmargin, profiles_std, outfolder=None):
 
     cmap = matplotlib.cm.get_cmap('plasma')
     norm = LogNorm(vmin=.1, vmax=10)
@@ -388,6 +396,7 @@ def plot_and_save_diffusiophoresis(ims, channel_position_px, times,
     imsave(os.path.join(outfn, content) + '.tif', imsout)
     np.savez(os.path.join(outfn, content) + '.npz',
              profiles=profiles,
+             profiles_std=profiles_std,
              X_pos=X_pos,
              times=times)
 

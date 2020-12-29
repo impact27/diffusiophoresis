@@ -161,7 +161,7 @@ for set_idx, set_name in enumerate(set_names):
         beta_salt = Cs_outi / Cs_in
 
         # Fit :)
-        fit_Dp, fit_Gp = fit_diffusiophoresis(
+        fit_Dp, fit_Gp, fit_Dp_std, fit_Gp_std = fit_diffusiophoresis(
             norm_profiles[mask_valid], times[mask_valid], positions,
             idx_max[mask_valid], Cs_outi / Cs_in, Dsi, mask_times[mask_valid])
 

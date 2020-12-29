@@ -16,7 +16,7 @@ from scipy.special import erf
 from scipy.integrate import solve_bvp
 from scipy.interpolate import interp1d
 from scipy.ndimage.filters import maximum_filter
-from scipy.optimize import minimize
+from scipy.optimize import curve_fit
 
 from matplotlib.colors import LogNorm
 import matplotlib
@@ -122,13 +122,54 @@ def normalise_profile(profiles):
     return norm_profiles, mask_time, idx_max
 
 
-def fit_diffusiophoresis(profiles, times, positions, idx_start,
-                         ratio_salt, diffusion_salt, time_mask):
+def fit_data(profiles, times, positions,
+             diffusion_salt, eta_max, idx_start, profiles_std):
+    """Get data"""
+    # Less than 20% of the fluorescence must be in the last fifth of the channel
+    start_mask = (0 < positions) & (positions < 400e-6)
+    end_mask = (400e-6 < positions) & (positions < 500e-6)
+    time_mask = (
+        np.nanmean(profiles[:, start_mask], axis=1)
+        > 5 * np.nanmean(profiles[:, end_mask], axis=1))
+    mask_valid = np.isfinite(profiles)
+    mask_valid = np.logical_and(mask_valid, time_mask[:, np.newaxis])
+    if idx_start is not None:
+        for idx in range(len(mask_valid)):
+            mask_valid[idx, :idx_start[idx]] = False
+
+    m_positions = (positions[np.newaxis] * np.ones_like(times[:, np.newaxis]))
+    m_positions = m_positions[mask_valid]
+
+    m_times = (np.ones_like(positions[np.newaxis]) * times[:, np.newaxis])
+    m_times = m_times[mask_valid]
+
+    m_profiles = profiles[mask_valid]
+    if profiles_std:
+        m_profiles_std = profiles_std[mask_valid]
+    else:
+        m_profiles_std = None
+
+    eta = m_positions / np.sqrt(4 * diffusion_salt * m_times)
+
+    mask_range = eta_max > eta
+
+    eta = eta[mask_range]
+    
+    m_profiles = m_profiles[mask_range]
+    if m_profiles_std:
+        m_profiles_std = m_profiles_std[mask_range]
+    return eta, m_profiles, m_profiles_std
+
+
+def fit_diffusiophoresis(profiles, times, positions, idx_start, ratio_salt,
+                         diffusion_salt, time_mask, profiles_std=None):
     """Fit diffusiophoresis"""
     if not np.any(time_mask):
         raise RuntimeError
 
     profiles = profiles[time_mask]
+    if profiles_std:
+        profiles_std = profiles_std[time_mask]
     times = times[time_mask]
     idx_start = idx_start[time_mask]
 
@@ -142,18 +183,26 @@ def fit_diffusiophoresis(profiles, times, positions, idx_start,
     else:
         init = [-3, -3]
 
-    def lse_diffusiophoresis(x):
-        Dp, Gp = np.exp(x)
-        # assert np.all(1e-3 < measured_eta < 1)
+    def fit_func(X, log_Dp, log_Gp):
+        """Fit function."""
+        Dp, Gp = np.exp([log_Dp, log_Gp])
         eta = 10 ** np.linspace(-4, 1, 1000)
         eta[0] = 0
         fit = get_similarity(eta, ratio_salt, Gp, Dp)
-        return similarity_LSE(fit.x, fit.y[0] / np.max(fit.y[0]),
-                              profiles, times, positions, diffusion_salt,
-                              idx_start)
+        fit_curve = interp1d(fit.x, fit.y[0] / np.max(fit.y[0]))
+        return fit_curve(X)
 
-    Dp, Gp = np.exp(minimize(lse_diffusiophoresis, init).x)
-    return Dp * diffusion_salt, Gp * diffusion_salt
+    eta, m_profiles, m_profiles_std = fit_data(
+        profiles, times, positions, diffusion_salt, 10, idx_start, profiles_std)
+    fit = curve_fit(fit_func , eta, m_profiles, init, absolute_sigma=True)
+
+    Dp, Gp = np.exp(fit[0])
+    # Error propagation
+    Dp_std, Gp_std = np.exp(fit[0]) * np.sqrt(np.diag(fit[1]))
+    return (
+        Dp * diffusion_salt, Gp * diffusion_salt,
+        Dp_std * diffusion_salt, Gp_std * diffusion_salt
+        )
 
 
 def color(time):

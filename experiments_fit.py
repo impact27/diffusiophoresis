@@ -9,6 +9,7 @@ This script is distributed under CC BY-NC-SA version 4.0. You should have
 recieved a copy of the licence along with it. If not, see
 https://creativecommons.org/licenses/by-nc-sa/4.0/.
 """
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,7 +29,7 @@ from diffusiophoresis_fitting import (fit_diffusiophoresis,
 # %% Data
 cmap = matplotlib.cm.get_cmap('plasma')
 save_dir = '../Plots/experiments_fit'
-fits_filename = '../Data/Experiments_processed/fit_sets.json'
+fits_filename = '../Data/Experiments_processed/fit_sets1.json'
 salts_infos = json.load(open('../Litterature Values/salts_info.json'))
 proteins_infos = json.load(open('../Litterature Values/proteins_info.json'))
 
@@ -74,6 +75,7 @@ for set_name in sets:
         name = results.at[fn, 'name']
         data = np.load(os.path.join(os.path.dirname(fits_filename), fn))
         profiles = data['profiles']
+        profiles_std = data['profiles_std']
         positions = data['X_pos'] * 1e-6
         times = data['times'][:len(profiles)] * 60
         Ds = salts_infos[results.at[fn, 'salt']]['Diffusion']
@@ -108,9 +110,12 @@ for set_name in sets:
         # Select profiles to plot
         fit_times = times[max_idx > 0]
         fit_profiles = profiles[max_idx > 0]
+        fit_profiles_std = profiles_std[max_idx > 0]
         max_idx = max_idx[max_idx > 0]
         # Normalize by the max value
         fit_profiles /= fit_profiles[
+            np.arange(len(fit_profiles)), max_idx][:, np.newaxis]
+        fit_profiles_std /= fit_profiles[
             np.arange(len(fit_profiles)), max_idx][:, np.newaxis]
 
         # Check if profiles has a large intensity between 400 and 500
@@ -124,6 +129,7 @@ for set_name in sets:
         idx_start = np.argmax(positions > 0)
         fit_positions = positions[idx_start:]
         fit_profiles = fit_profiles[:, idx_start:]
+        fit_profiles_std = fit_profiles_std[:, idx_start:]
         max_idx -= idx_start
 
         # Find time offset
@@ -165,9 +171,9 @@ for set_name in sets:
         expected_Dp = DRh / expected_radius
 
         # Plot and fit
-        Dp, Gp = fit_diffusiophoresis(
+        Dp, Gp, Dp_std, Gp_std = fit_diffusiophoresis(
             fit_profiles, fit_times, fit_positions, max_idx,
-            beta_salt, Ds, fit_time_mask)
+            beta_salt, Ds, fit_time_mask, fit_profiles_std)
 
         print(Dp, Gp)
         print(expected_Dp, expected_Gp)
@@ -185,6 +191,8 @@ for set_name in sets:
         # Save results
         results.loc[fn, 'Diffusiophoresis fit'] = Gp
         results.loc[fn, 'Diffusion fit'] = Dp
+        results.loc[fn, 'Diffusiophoresis fit std'] = Gp_std
+        results.loc[fn, 'Diffusion fit std'] = Dp_std
         results.loc[fn, 'protein'] = protein
         results.loc[fn, 'salt'] = salt
 
@@ -237,3 +245,81 @@ plt.legend()
 plt.xlabel('Litterature Mobility [$m^2 / (V s)$]')
 plt.ylabel('Fitted Mobility [$m^2 / (V s)$]')
 plt.savefig(os.path.join(save_dir, 'Results_diffusiophoresis.pdf'))
+
+#%%
+figure()
+for idx, set_name in enumerate(results_list):
+    results = results_list[set_name]
+    beta = np.asarray([salts_infos[salt]['beta']
+                       for salt in results.loc[:, 'salt']])
+    fitted_mobility = (results.loc[:, 'Diffusiophoresis fit']
+                       / beta / gamma_over_mu_beta).to_numpy()
+    fitted_mobility_std = (results.loc[:, 'Diffusiophoresis fit std']
+                       / beta / gamma_over_mu_beta).to_numpy()
+
+    fitted_radius = DRh / results.loc[:, 'Diffusion fit']
+    fitted_radius_std = (DRh * results.loc[:, 'Diffusion fit std']
+                         / np.square(results.loc[:, 'Diffusion fit']))
+
+    mobility = np.mean(fitted_mobility)
+    std_mobility = np.nanmean(fitted_mobility_std)
+    radius = np.mean(fitted_radius)
+    std_radius = np.nanmean(fitted_radius_std)
+
+    plt.errorbar(radius * 1e9, mobility*1e9,
+                 xerr=std_radius * 1e9, yerr=std_mobility*1e9,
+                 fmt='x', label=set_name)
+    # plt.plot(fitted_radius * 1e9, fitted_mobility * 1e9, 'x', c=f"C{idx}")
+
+    print(std_radius / radius, std_mobility / mobility)
+
+plt.xlim([0.9, plt.xlim()[1]])
+plt.xscale("log")
+plt.legend()
+plt.xlabel("Hydrodynamic radius [nm]", fontsize=14)
+plt.ylabel("Mobility [um^2/mV/s]", fontsize=14)
+plt.savefig(os.path.join(save_dir, 'fit_experiments.pdf'))
+
+#%%
+rel_r = []
+rel_c = []
+figure()
+for idx, set_name in enumerate(results_list):
+    results = results_list[set_name]
+    beta = np.asarray([salts_infos[salt]['beta']
+                       for salt in results.loc[:, 'salt']])
+    fitted_mobility = (results.loc[:, 'Diffusiophoresis fit']
+                       / beta / gamma_over_mu_beta).to_numpy()
+    fitted_mobility_std = (results.loc[:, 'Diffusiophoresis fit std']
+                       / beta / gamma_over_mu_beta).to_numpy()
+
+    fitted_radius = DRh / results.loc[:, 'Diffusion fit']
+    fitted_radius_std = (DRh * results.loc[:, 'Diffusion fit std']
+                         / np.square(results.loc[:, 'Diffusion fit']))
+
+    mobility = np.mean(fitted_mobility)
+    std_mobility = np.nanmean(fitted_mobility_std)
+    radius = np.mean(fitted_radius)
+    std_radius = np.nanmean(fitted_radius_std)
+
+    charge = mobility * radius / DRh * boltzmann * temperature / electronic_charge
+    std_charge = boltzmann * temperature / DRh  / electronic_charge * np.sqrt(
+        mobility**2 * std_radius**2 + radius**2 * std_mobility**2)
+    plt.errorbar(radius * 1e9, charge,
+                 xerr=std_radius * 1e9, yerr=std_charge,
+                 fmt='x', label=set_name)
+
+    # fitted_charge = fitted_mobility * fitted_radius / DRh * boltzmann * temperature / electronic_charge
+    # plt.plot(fitted_radius * 1e9, fitted_charge, 'x', c=f"C{idx}")
+
+    print(std_radius / radius, std_charge, std_charge/charge)
+    rel_r.append(std_radius / radius)
+    rel_c.append(std_charge/charge)
+
+plt.xlim([0.9, plt.xlim()[1]])
+plt.xscale("log")
+plt.legend()
+plt.xlabel("Hydrodynamic radius [nm]", fontsize=14)
+plt.ylabel("Charge [e]", fontsize=14)
+# plt.savefig(os.path.join(save_dir, 'fit_experiments_charge.pdf'),
+#             bbox_inches='tight')

@@ -17,7 +17,7 @@ from matplotlib.pyplot import figure
 import os.path
 import json
 from scipy.interpolate import interp1d
-
+plt.rcParams.update({'font.size': 16})
 parameter_dict = {
     'CsOut': 'salt_concentartion_out',
     'Gamma': 'diffusiophoresis_coefficient',
@@ -64,14 +64,14 @@ for idx, key in enumerate(set_names):
     x = np.asarray(sets[key]['numbers'])
     if key == 'CsOut':
         x /= parameters['salt_concentartion_in']
-    plt.loglog(x, max_intensities[key] * 1e2, 'x--', label='Simulation')
+    plt.loglog(x, max_intensities[key] * 1e2, 'x--', label='Simulations')
     plt.xlabel(xlabel[key])
     plt.ylabel('Intensity')
     if key in parameter_dict:
         regular_x = parameters[parameter_dict[key]]
         if key == 'CsOut':
             regular_x /= parameters['salt_concentartion_in']
-        plt.plot(np.abs(regular_x), default_value * 1e2, 'x', label='Reference')
+        plt.plot(np.abs(regular_x), default_value * 1e2, 'x', label='Reference point')
 
     else:
         plt.plot(2, default_value * 1e2, 'x')
